@@ -1258,11 +1258,10 @@
     } else {
       var s = SPOT[k.luogo] || SPOT.piazza, tx = s.x, tz = s.z;
       if (actionName === "leggi_bottiglia") { tx = bottle.position.x - 0.6; tz = bottle.position.z - 0.4; }
-      if (actionName === "cerca") { var t = now / 1000; tx += Math.sin(t * .4) * .7; tz += Math.cos(t * .33) * .6; }
+      if (actionName === "cerca") { var bk = Math.floor(now / 7000), ra = Math.sin(bk * 12.9898) * 43758.5453, rb = ra - Math.floor(ra); tx += Math.cos(rb * 6.283) * (0.4 + rb * 0.6); tz += Math.sin(rb * 6.283) * (0.4 + rb * 0.6); }
       kpos.x += (tx - kpos.x) * ks; kpos.z += (tz - kpos.z) * ks;
-      var lk = actionName === "cerca" ? { x: kpos.x + Math.cos(now / 2500), z: kpos.z - Math.sin(now / 2500) } : s.look;
-      if (Math.hypot(tx - kpos.x, tz - kpos.z) > 0.15) lk = { x: tx, z: tz }, walking = true;
-      kHeading = Math.atan2(lk.x - kpos.x, lk.z - kpos.z);
+      if (Math.hypot(tx - kpos.x, tz - kpos.z) > 0.15) { walking = true; kHeading = Math.atan2(tx - kpos.x, tz - kpos.z); }
+      else if (actionName !== "cerca") kHeading = Math.atan2(s.look.x - kpos.x, s.look.z - kpos.z);
     }
     kpos.y = heightAt(kpos.x, kpos.z);
   }
