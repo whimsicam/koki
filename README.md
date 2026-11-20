@@ -12,7 +12,7 @@ Vive su **Cloudflare**, gratis e senza carta di credito. Pensa con **Workers AI*
 | `src/mind.js` | La mente: le domande al modello (decidere, riflettere, scrivere il diario, rispondere) e le regole di riserva. |
 | `src/world.js` | L'isola: i luoghi, le piccole cose da trovare, il catalogo delle azioni. |
 | `src/index.js` | L'ingresso: smista le richieste e controlla la password. |
-| `public/index.html` | La pagina 3D: l'isola, Kōki che si muove, il diario, la bottiglia, la chat. |
+| `public/index.html` | La pagina 3D: l'isola (costruita a partire da CAM World), Kōki che si muove, il diario, la bottiglia, la chat. |
 | `wrangler.toml` | Le impostazioni (modello, frequenza dei turni, budget giornaliero, posizione per ora e meteo). |
 
 ### Il ciclo di vita
@@ -21,6 +21,9 @@ Vive su **Cloudflare**, gratis e senza carta di credito. Pensa con **Workers AI*
 3. Ogni 3 ore riflette: sceglie i ricordi da tenere e si fa nuove convinzioni.
 4. Quando va a dormire scrive la pagina di diario e cambia una piccola cosa di sé (un'abitudine o un gusto).
 5. Se il modello non risponde o finisce il budget del giorno (`MAX_AI_CALLS`), va avanti con regole semplici.
+
+### L'isola
+Metà cose normali e metà strane. Normali: la casa di Kōki, la piazzetta con la fontana, il laghetto col ponticello, il prato fiorito, l'orto, il bosco, il giardino giapponese, la spiaggia, il molo con la barca, il faro, il mulino, la balena. Strane: il telescopio rotto sulla collina (mancano lente, vite e manovella), la torre con l'orologio che va all'indietro, la casetta chiusa con la finestra accesa di notte, la lanterna di pietra che certe notti si accende da sola, il gatto di pietra che si sposta quando nessuno guarda, le impronte sulla spiaggia, la bottiglia col messaggio.
 
 ### Il nucleo che non cambia mai
 Curioso · testardo · creativo · ha paura del buio ma è innamorato delle stelle · colleziona piccole cose.

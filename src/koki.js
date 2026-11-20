@@ -127,6 +127,9 @@ export class Koki extends DurableObject {
       W.gattoMosso = now;
       this.logga(now, "mondo", "Di notte, il gatto di pietra si è spostato: " + PLACES[W.gatto].nome + ".");
     }
+    // la lanterna di pietra: certe notti si accende da sola
+    if (T.notte && W.lanternaNotte !== T.giorno && T.ora24 >= 18) { W.lanternaNotte = T.giorno; W.lanterna = Math.random() < .35; if (W.lanterna) this.logga(now, "mondo", "Stanotte la lanterna di pietra si è accesa da sola."); }
+    if (!T.notte && W.lanterna) W.lanterna = false;
     // le impronte misteriose compaiono certe mattine, e la marea le cancella nel pomeriggio
     if (!T.notte && T.ora24 >= 6 && T.ora24 < 11 && W.improntaGiorno !== T.giorno) {
       W.improntaGiorno = T.giorno;
@@ -172,7 +175,7 @@ export class Koki extends DurableObject {
     if (az === "vai") {
       const key = this.trovaLuogo(ogg);
       if (!key || key === S.luogo) return false;
-      min = Math.max(3, Math.round(dist(S.luogo, key) * 1.1));
+      min = Math.max(3, Math.round(dist(S.luogo, key) * 0.5));
       S.attivita = { azione: "vai", oggetto: key, da: S.luogo, a: key, inizio: now, fine: now + min * MIN / this.speed(), perche: m.perche || "" };
       this.logga(now, "azione", `Va verso ${PLACES[key].nome}. ${m.perche || ""}`);
       return true;
@@ -218,6 +221,8 @@ export class Koki extends DurableObject {
         if (S.luogo === "spiaggia" && W.impronte) S.novita.push("Sulla sabbia ci sono delle impronte che non sono tue. Vanno verso il mare.");
         if (S.luogo === "spiaggia" && W.bottiglia) S.novita.push("Sulla riva c'è una bottiglia di vetro chiusa!");
         if (S.luogo === "collina" && !S.sa.telescopio) S.novita.push("In cima alla collina c'è un vecchio telescopio.");
+        if (S.luogo === "lanterna" && T.notte && W.lanterna) S.novita.push("La lanterna di pietra è accesa, ma intorno non c'è nessuno!");
+        if (S.luogo === "casetta" && T.notte) S.novita.push("Una finestra della casetta chiusa è accesa, con una luce viola.");
         if (S.novita.length) { this.ricorda(now, esito + " " + S.novita.join(" "), forza + .1, S.luogo); S.novita.forEach((n) => this.logga(now, "nota", n)); }
         break;
       }
@@ -230,7 +235,8 @@ export class Koki extends DurableObject {
           forza = .7;
         } else if (ogg.includes("impront") && S.luogo === "spiaggia" && W.impronte) d = "Le impronte sono grandi e tonde, con quattro dita. Partono dal mare e ci ritornano.";
         else if (ogg.includes("cielo")) d = T.notte ? (T.nuvole > 60 ? "Il cielo è coperto, non si vede neanche una stella." : "Il cielo è pieno di stelle.") : `Il cielo oggi è ${T.meteo}.`;
-        else d = pick(P.dettagli);
+        else if (S.luogo === "lanterna" && T.notte && W.lanterna) d = "La lanterna di pietra è accesa! Dentro c'è una fiammella, ma qui non c'è nessuno.";
+        else d = pick(T.notte && P.dettagliNotte ? P.dettagliNotte.concat(P.dettagli) : P.dettagli);
         esito = `Ho osservato ${a.oggetto || "intorno"}: ${d}`;
         b.curiosita -= .25;
         this.ricorda(now, esito, forza + .05, S.luogo);
@@ -429,7 +435,7 @@ export class Koki extends DurableObject {
         coda: S.coda, pensiero: S.pensiero, fontePensiero: S.fontePensiero || "", umore: S.umore, corpo: S.corpo,
         inventario: S.inventario, scheda: S.scheda, nato: S.nato
       },
-      mondo: { gatto: W.gatto, impronte: W.impronte, bottiglia: !!W.bottiglia, bottigliaInViaggio: !!W.bottigliaInArrivo, telescopio: W.telescopio },
+      mondo: { gatto: W.gatto, lanterna: !!W.lanterna, impronte: W.impronte, bottiglia: !!W.bottiglia, bottigliaInViaggio: !!W.bottigliaInArrivo, telescopio: W.telescopio },
       aperti: this.sql.exec("SELECT id, tipo, testo, t FROM aperti WHERE chiuso = 0 ORDER BY id DESC").toArray(),
       convinzioni: this.sql.exec("SELECT testo, prove FROM convinzioni ORDER BY prove DESC LIMIT 12").toArray(),
       opere: this.sql.exec("SELECT t, tipo, titolo FROM opere ORDER BY id DESC LIMIT 30").toArray(),

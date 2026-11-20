@@ -4,57 +4,88 @@
 
 export const PLACES = {
   casa: {
-    nome: "la casa", x: -5.5, z: -2.5,
-    desc: "La tua casetta di legno con il tetto tondo. Dentro c'è una mensola dove puoi tenere le cose che trovi.",
-    dettagli: ["La porta cigola un po' quando la apri.", "Dalla finestra si vede il laghetto.", "Sulla mensola c'è ancora spazio.", "Il tetto è coperto di muschio verde."],
+    nome: "la casa", x: 4.5, z: 12.5,
+    desc: "La tua casetta tonda con il tetto di muschio e la porta azzurra. Dentro c'è una mensola dove tieni le cose che trovi.",
+    dettagli: ["La porta azzurra cigola un po'.", "Dal camino esce un filo di fumo.", "Sulla mensola c'è ancora spazio.", "Davanti alla porta ci sono dei sassi piatti, uno dopo l'altro.", "Sul filo del bucato sventolano tre panni colorati."],
     cose: [], coperto: true
   },
   piazza: {
-    nome: "la piazzetta", x: 0, z: 1,
-    desc: "Uno spiazzo di pietre piatte al centro dell'isola, da cui partono tutti i sentieri.",
-    dettagli: ["Tra le pietre crescono ciuffi d'erba.", "Da qui si vedono quasi tutti i posti dell'isola.", "Una pietra è più liscia delle altre, come se qualcuno ci si sedesse spesso."],
-    cose: ["sassolino colorato", "bottone perso"]
+    nome: "la piazzetta", x: 0, z: 0,
+    desc: "La piazza al centro dell'isola, con la fontana, le bancarelle e i lampioni. Da qui partono tutti i sentieri.",
+    dettagli: ["L'acqua della fontana fa un rumore allegro.", "Le bancarelle hanno i tendoni a righe.", "Da qui si vedono quasi tutti i posti dell'isola.", "Sulla bacheca ci sono dei foglietti colorati."],
+    cose: ["sassolino colorato", "bottone perso", "moneta antica"]
   },
   laghetto: {
-    nome: "il laghetto", x: 4.5, z: -1.5,
-    desc: "Un piccolo lago tondo con un ponticello di legno che lo attraversa. A volte i pesci saltano.",
-    dettagli: ["Dal ponticello ti vedi riflesso nell'acqua.", "Un pesce arancione nuota sotto il ponte.", "Le ninfee si chiudono quando fa sera.", "L'acqua è così ferma che sembra uno specchio."],
+    nome: "il laghetto", x: 0.5, z: 17.5,
+    desc: "Un laghetto con le ninfee, un ponticello di legno e due anatre bianche.",
+    dettagli: ["Dal ponticello ti vedi riflesso nell'acqua.", "Le anatre nuotano in fila.", "Le ninfee si chiudono quando fa sera.", "Tra le canne gracida qualcosa."],
     cose: ["sasso piatto", "piuma bianca", "conchiglia di lago"]
   },
   giardino: {
-    nome: "il giardino dei fiori", x: -4, z: 4.5,
-    desc: "Un giardino pieno di fiori di tanti colori, dove volano le farfalle.",
-    dettagli: ["Una farfalla gialla si è posata su un fiore viola.", "I fiori profumano di più dopo la pioggia.", "Ci sono fiori che non hai mai visto da nessun'altra parte.", "Le api ronzano piano."],
+    nome: "il prato fiorito", x: -7.5, z: 6.5,
+    desc: "Un prato pieno di fiori di tanti colori, con le farfalle e le arnie delle api.",
+    dettagli: ["Una farfalla gialla si è posata su un fiore viola.", "I fiori profumano di più dopo la pioggia.", "Le api entrano ed escono dalle arnie.", "Ci sono fiori che non hai mai visto altrove."],
     cose: ["petalo secco", "seme a elica", "sassolino rosa"]
   },
   bosco: {
-    nome: "il bosco", x: -7, z: -7,
-    desc: "Un boschetto fitto di alberi alti. Sotto le chiome è sempre un po' più buio.",
-    dettagli: ["Le chiome fanno passare solo pezzetti di luce.", "Si sente un picchio da qualche parte.", "C'è un albero con un buco a forma di cuore.", "Il terreno è morbido di foglie."],
+    nome: "il bosco", x: -10.5, z: -8.5,
+    desc: "Una radura nel bosco con un albero enorme e vecchissimo, funghi rossi in cerchio e un tronco cavo.",
+    dettagli: ["Nel tronco dell'albero vecchio c'è un buco a forma di cuore.", "I funghi crescono in cerchio, come se ballassero.", "Nel tronco cavo l'eco ripete i rumori.", "Si sente un picchio da qualche parte."],
     cose: ["pigna", "ghianda col cappello", "piuma a righe", "foglia rossa"]
   },
   collina: {
-    nome: "la collina", x: 6, z: -7.5,
-    desc: "Il punto più alto dell'isola. In cima c'è un vecchio telescopio, e da qui il cielo sembra più vicino.",
-    dettagli: ["Da quassù si vede tutto il mare intorno.", "Il vento qui è più forte.", "L'erba è bassa e piena di trifogli."],
+    nome: "la collina", x: -5.5, z: -17.5,
+    desc: "Il punto più alto dell'isola, con una cascata. In cima c'è un vecchio telescopio su una piattaforma di pietra.",
+    dettagli: ["Da quassù si vede tutto il mare intorno.", "La cascata scende fino al laghetto di sotto.", "C'è un cartello con una stella disegnata.", "Il vento qui è più forte."],
     cose: ["sassolino luccicante", "trifoglio"]
   },
   spiaggia: {
-    nome: "la spiaggia", x: 1.5, z: 8.5,
+    nome: "la spiaggia", x: 4.9, z: 22.2,
     desc: "Una spiaggia di sabbia chiara dove arrivano le onde. Il mare porta spesso piccole cose.",
-    dettagli: ["Le onde lasciano disegni sulla sabbia.", "La sabbia è tiepida.", "In lontananza si vedono altre isole, piccole e blu.", "Un granchio corre di lato."],
+    dettagli: ["Le onde lasciano disegni sulla sabbia.", "La sabbia è tiepida.", "Lontano si vede il faro sul suo isolotto.", "Un granchio corre di lato."],
     cose: ["conchiglia a spirale", "vetro di mare", "sasso liscio", "stella marina secca"]
   },
   molo: {
-    nome: "il molo", x: 7.5, z: 6,
-    desc: "Un molo di legno che entra nel mare. Da qui partirà un giorno il traghetto per le altre isole.",
-    dettagli: ["Le assi del molo scricchiolano.", "L'acqua sotto il molo è molto profonda e scura.", "Ci sono vecchie corde arrotolate.", "I gabbiani si posano sui pali."],
+    nome: "il molo", x: 23.4, z: 8.8,
+    desc: "Un lungo molo di legno con una casetta rossa in fondo. Una barca parte e torna. Da qui un giorno partirà il traghetto per le altre isole.",
+    dettagli: ["Le assi del molo scricchiolano.", "L'acqua sotto il molo è profonda e scura.", "La barca è appena tornata.", "I gabbiani si posano sui pali."],
     cose: ["pezzo di corda", "chiodo arrugginito", "conchiglia piatta"]
+  },
+  orologio: {
+    nome: "la torre dell'orologio", x: 11, z: 5.5,
+    desc: "Una torre storta con un grande orologio e degli ingranaggi che girano.",
+    dettagli: ["Le lancette dell'orologio girano all'indietro.", "Gli ingranaggi fanno un ticchettio regolare.", "La torre è un po' storta, come se fosse stanca.", "Accanto c'è una clessidra enorme."],
+    cose: ["ingranaggio minuscolo", "vite d'ottone"]
+  },
+  casetta: {
+    nome: "la casetta chiusa", x: 15, z: -10.5,
+    desc: "Una casetta viola e storta, con l'edera sui muri. La porta è chiusa con un lucchetto d'oro.",
+    dettagli: ["Il lucchetto è chiuso. Non c'è nessuna chiave in giro.", "Dalla buca delle lettere spunta una busta, ma è incastrata.", "Se bussi, nessuno risponde.", "Dalle finestre non si vede dentro, è tutto buio."],
+    dettagliNotte: ["Di notte una finestra della casetta è accesa, con una luce viola. Ma dentro non si vede nessuno."],
+    cose: ["foglia d'edera", "chiodo storto"]
+  },
+  orto: {
+    nome: "l'orto", x: -8, z: 13,
+    desc: "Un orto con le file di carote, cavoli e pomodori, uno spaventapasseri e una piccola serra di vetro.",
+    dettagli: ["Lo spaventapasseri dondola un po' col vento.", "Nella serra fa caldo.", "Le carote spuntano con il loro ciuffo.", "C'è un innaffiatoio blu vicino al recinto."],
+    cose: ["seme di zucca", "fagiolo secco", "carota piccola"]
+  },
+  lanterna: {
+    nome: "la lanterna di pietra", x: -17, z: 2.5,
+    desc: "Una vecchia lanterna di pietra in mezzo a un cerchio di sassi coperti di muschio.",
+    dettagli: ["La lanterna è fredda, ma dentro c'è un po' di cera sciolta.", "I sassi intorno sono disposti in cerchio, come se qualcuno li avesse messi apposta.", "Il muschio sui sassi è morbido."],
+    cose: ["sasso muschiato", "pezzetto di cera"]
+  },
+  giardino_giapponese: {
+    nome: "il giardino giapponese", x: 8.5, z: -16.5,
+    desc: "Un giardino con un torii rosso, un bonsai, un laghetto con il ponticello e due lanterne.",
+    dettagli: ["Il bonsai è piccolo ma sembra vecchissimo.", "Il torii rosso sembra una porta che non porta da nessuna parte.", "Nel laghetto nuotano i pesci rossi.", "I ciliegi cambiano colore con le stagioni."],
+    cose: ["sassolino bianco", "foglia d'acero"]
   }
 };
 
 // Dove può comparire il gatto di pietra (si sposta di notte, quando nessuno guarda).
-export const CAT_SPOTS = ["piazza", "laghetto", "giardino", "bosco", "spiaggia", "molo", "collina"];
+export const CAT_SPOTS = ["piazza", "laghetto", "giardino", "bosco", "spiaggia", "molo", "collina", "orto", "orologio", "lanterna", "giardino_giapponese"];
 
 // I pezzi che mancano al telescopio, e dove sono nascosti.
 export const TELESCOPE_PARTS = { lente: "spiaggia", vite: "bosco", manovella: "molo" };
