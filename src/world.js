@@ -7,7 +7,7 @@ export const PLACES = {
     nome: "la casa", x: 4.5, z: 12.5,
     desc: "La tua casetta tonda con il tetto di muschio e la porta azzurra. Dentro c'è una mensola dove tieni le cose che trovi.",
     dettagli: ["La porta azzurra cigola un po'.", "Dal camino esce un filo di fumo.", "Sulla mensola c'è ancora spazio.", "Davanti alla porta ci sono dei sassi piatti, uno dopo l'altro.", "Sul filo del bucato sventolano tre panni colorati."],
-    cose: [], coperto: true
+    cose: ["bottone sotto il letto", "matita mozzicata", "biglia di vetro"], coperto: true
   },
   piazza: {
     nome: "la piazzetta", x: 0, z: 0,

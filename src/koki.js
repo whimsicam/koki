@@ -169,7 +169,7 @@ export class Koki extends DurableObject {
   // ---------- le azioni ----------
   avvia(S, W, m, now, T) {
     const az = m.azione, ogg = (m.oggetto || "").toString().trim();
-    let min = clamp(parseInt(m.minuti, 10) || 20, 5, 90);
+    let min = clamp(parseInt(m.minuti, 10) || 15, 5, 30);
     const needs = (luogo) => { if (S.luogo !== luogo) { S.coda.unshift(m); this.avvia(S, W, { azione: "vai", oggetto: luogo, minuti: 10, perche: "per " + az.replace("_", " ") }, now, T); return true; } return false; };
     if (!ACTIONS[az]) return false;
     if (az === "vai") {
@@ -243,14 +243,10 @@ export class Koki extends DurableObject {
         break;
       }
       case "cerca": {
-        const part = Object.entries(TELESCOPE_PARTS).find(([n, where]) => where === S.luogo && W.telescopio.mancanti.includes(n) && !S.inventario.includes(n));
-        if (part && S.sa.telescopio && Math.random() < .35) {
-          S.inventario.push(part[0]); esito = `Cercando qui ho trovato... una ${part[0]}! Sembra proprio un pezzo del telescopio!`; forza = .85; S.umore += .3;
-        } else if (Math.random() < .55 && P.cose.length) {
-          const c = pick(P.cose); S.inventario.push(c); esito = `Ho trovato: ${c}.`; forza = .45; S.umore += .1;
-        } else esito = "Ho cercato, ma stavolta non ho trovato niente.";
+        const trovate = a.trovate || [];
+        esito = trovate.length ? `Ho finito di cercare. Ho trovato: ${trovate.join(", ")}.` : "Ho cercato a lungo, ma stavolta non ho trovato niente.";
         b.curiosita -= .2;
-        this.ricorda(now, esito, forza, S.luogo);
+        if (!trovate.length) this.ricorda(now, esito, .25, S.luogo);
         break;
       }
       case "disegna": {
@@ -297,6 +293,18 @@ export class Koki extends DurableObject {
     S.esito = esito;
     this.logga(now, "esito", esito);
     for (const k of Object.keys(b)) b[k] = clamp(b[k], 0, 1);
+    S.umore = clamp(S.umore, -1, 1);
+  }
+
+  // mentre cerca, ogni tanto trova qualcosa (non solo alla fine)
+  tentaRicerca(S, W, now) {
+    const a = S.attivita, P = PLACES[S.luogo];
+    a.ultimoTentativo = now; a.trovate = a.trovate || [];
+    const part = Object.entries(TELESCOPE_PARTS).find(([n, where]) => where === S.luogo && W.telescopio.mancanti.includes(n) && !S.inventario.includes(n));
+    let esito = null, forza = .45;
+    if (part && S.sa.telescopio && Math.random() < .3) { S.inventario.push(part[0]); a.trovate.push(part[0]); esito = `Cercando qui ho trovato... una ${part[0]}! Sembra proprio un pezzo del telescopio!`; forza = .85; S.umore += .3; }
+    else if (P.cose.length && Math.random() < .4) { const c = pick(P.cose); S.inventario.push(c); a.trovate.push(c); esito = `Ho trovato: ${c}.`; S.umore += .1; }
+    if (esito) { S.esito = esito; this.ricorda(now, esito, forza, S.luogo); this.logga(now, "esito", esito); }
     S.umore = clamp(S.umore, -1, 1);
   }
 
@@ -405,6 +413,7 @@ export class Koki extends DurableObject {
       } else { this.put("S", S); this.put("W", W); return; }
     }
 
+    if (S.attivita && S.attivita.azione === "cerca" && now < S.attivita.fine && now - (S.attivita.ultimoTentativo || S.attivita.inizio) > 6 * MIN / this.speed()) this.tentaRicerca(S, W, now);
     let serveMente = false;
     // stanchissimo: crolla dal sonno, senza bisogno di pensarci
     if (S.corpo.energia < .1 && !S.dorme && !(S.attivita && S.attivita.azione === "dormi") && !(S.coda[0] && S.coda[0].azione === "dormi")) {

@@ -65,7 +65,7 @@ export function decisionPrompt(S, W, ctx) {
     `Le tue cose: ${S.inventario.length ? S.inventario.slice(-12).join(", ") : "ancora niente"}.`,
     "Luoghi dell'isola:\n" + places,
     "Cosa puoi fare (scegli SOLO da qui):\n" + Object.values(ACTIONS).map((a) => "- " + a).join("\n"),
-    "Decidi cosa fare adesso: da 1 a 3 mosse in fila. Per ogni mossa scrivi l'azione, l'oggetto (il luogo, la cosa o il soggetto, se serve), quanti minuti (da 5 a 90) e perché, con la tua voce.",
+    "Decidi cosa fare adesso: da 1 a 3 mosse in fila. Per ogni mossa scrivi l'azione, l'oggetto (il luogo, la cosa o il soggetto, se serve), quanti minuti (da 5 a 30) e perché, con la tua voce.",
     "Scrivi anche il pensiero che hai in questo momento (una o due frasi).",
     "Se ti nasce un nuovo desiderio, una domanda o una promessa a te stesso, aggiungilo in nuovi_pensieri. Se uno dei pensieri che ti porti dietro è risolto, metti il suo numero in risolti."
   ].filter(Boolean).join("\n\n");
