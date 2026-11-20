@@ -2,6 +2,8 @@
 name = "koki"
 main = "src/index.js"
 compatibility_date = "2025-09-01"
+# Indirizzo pubblico koki.<nome>.workers.dev sempre acceso
+workers_dev = true
 
 # La pagina 3D e i suoi file.
 [assets]
