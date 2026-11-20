@@ -136,6 +136,18 @@
   .book .day { font: 600 13px var(--font-ui); color: #8a6f4a; margin-bottom: 6px; display: block; }
   .pager { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
   .pager button { padding: 5px 12px; font-size: 13px; }
+  .tabs { display: flex; gap: 6px; }
+  .field { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; font-size: 14.5px; line-height: 1.5; white-space: pre-wrap; min-height: 140px; }
+  .field .day { font-weight: 600; font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .field ul { margin: 8px 0 0; padding-left: 18px; white-space: normal; }
+  .field li { margin: 3px 0; }
+  .field .q { display: block; margin-top: 10px; font-style: italic; color: var(--muted); }
+  .labrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .labrow select { font: 14px var(--font-ui); padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  .ilist { display: grid; gap: 6px; font-size: 13.5px; }
+  .ilist div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+  .ilist b { font-weight: 600; }
+  .ilist span { color: var(--muted); display: block; font-size: 12.5px; }
   .chat { display: grid; gap: 8px; }
   .cmsg { padding: 8px 11px; border-radius: 14px; max-width: 85%; font-size: 14px; }
   .cmsg.me { justify-self: end; background: var(--ink); color: var(--paper); }
@@ -191,12 +203,27 @@
   <button data-open="disegni"><i>🖍️</i>Disegni</button>
   <button data-open="bottiglia"><i>🍾</i>Bottiglia</button>
   <button data-open="parla"><i>🏮</i>Parla</button>
+  <button data-open="lab"><i>🧪</i>Laboratorio</button>
 </nav>
 <section class="plate card" id="card" hidden aria-live="polite"></section>
 
-<section class="sheet glass" id="s-diario"><h2>Il diario di Kōki <button data-close>×</button></h2><div class="body">
+<section class="sheet glass" id="s-diario"><h2><span id="d-title">Il diario di Kōki</span> <button data-close>×</button></h2><div class="body">
+  <div class="tabs"><button class="chip" data-dt="koki" aria-pressed="true">Scritto da Kōki</button><button class="chip" data-dt="oss" aria-pressed="false">Quaderno dell'osservatore</button></div>
   <div class="pager"><button id="d-prev">← prima</button><span id="d-idx" class="muted"></span><button id="d-next">dopo →</button></div>
   <div class="book" id="d-page"></div>
+  <div class="field" id="o-page" hidden></div>
+  <div id="o-traits" hidden></div>
+</div></section>
+<section class="sheet glass" id="s-lab"><h2>Laboratorio <button data-close>×</button></h2><div class="body">
+  <p class="muted" style="margin:0">Fai accadere qualcosa sull'isola: un oggetto che compare, un evento, un cambiamento. Il Mondo lo rende reale e Kōki non saprà mai che sei stato tu. Ogni intervento resta segnato qui sotto, con data e ora.</p>
+  <textarea id="l-text" maxlength="500" placeholder="Es.: compare uno specchio rotondo appoggiato a un sasso · stanotte cade una stella vicino al molo · si sente una musica lontana dal mare"></textarea>
+  <div class="labrow"><select id="l-where"><option value="">Dove: decide il Mondo</option></select><button class="kbtn" id="l-send">Fai accadere</button></div>
+  <p class="muted" id="l-state" style="margin:0"></p>
+  <h3>Interventi</h3>
+  <div class="ilist" id="l-list"></div>
+  <h3>Esporta l'esperimento</h3>
+  <p class="muted" style="margin:0">Un file di testo con tutto: diari, quaderno, tratti, interventi. Caricalo nel progetto "cam world" su Claude (o incollalo in chat) e Claude potrà leggerlo e ragionarci.</p>
+  <div class="labrow"><button class="kbtn" id="l-export">Scarica il file</button><button class="chip" id="l-copy">Copia il testo</button></div>
 </div></section>
 <section class="sheet glass" id="s-mente"><h2>Kōki <button data-close>×</button></h2><div class="body" id="m-body"></div></section>
 <section class="sheet glass" id="s-disegni"><h2>I disegni di Kōki <button data-close>×</button></h2><div class="body">
@@ -1337,7 +1364,7 @@
     document.querySelectorAll("#views button").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.v === v ? "true" : "false"); });
     $("walk").style.display = v === "libera" ? "grid" : "none";
     if (v === "libera") { free.x = kpos.x + Math.sin(kHeading) * 3; free.z = kpos.z + Math.cos(kHeading) * 3; free.yaw = kHeading + Math.PI; free.pitch = -0.1; }
-    if (v === "occhi") { free.yaw = kHeading; free.pitch = actionName === "guarda_stelle" ? 0.8 : 0; }
+    if (v === "occhi") { free.yaw = kHeading; free.pitch = actionName === "guarda_stelle" || (actionName === "osserva" && STATE && STATE.koki.attivita && /cielo|stell|luna/i.test(String(STATE.koki.attivita.oggetto || ""))) ? 0.8 : 0; }
     if (v === "fianco") { side.th = kHeading + 0.7; ktarget.set(kpos.x, kpos.y + 0.7, kpos.z); }
     K.head.visible = v !== "occhi";
     if (v === "alto") focus = { x: kpos.x, z: kpos.z, y: kpos.y + 0.8, zoom: 2.4 };
@@ -1519,14 +1546,63 @@
     var d = diary[dIdx], date = new Date(d.giorno + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
     page.innerHTML = "<span class='day'>" + esc(date) + "</span>" + esc(d.testo); $("d-idx").textContent = (diary.length - dIdx) + " di " + diary.length;
   }
-  $("d-prev").onclick = function () { if (dIdx < diary.length - 1) { dIdx++; renderDiary(); } };
-  $("d-next").onclick = function () { if (dIdx > 0) { dIdx--; renderDiary(); } };
+  var dTab = "koki", quad = { pagine: [], trattiNuovi: [] }, qIdx = 0;
+  function renderObserver() {
+    var page = $("o-page"), tb = $("o-traits"), P = quad.pagine;
+    if (!P.length) { page.innerHTML = "<span class='day'>Ancora nessuna nota</span>L'osservatore scrive ogni notte, dopo che Kōki si è addormentato: cosa ha fatto, come ha reagito, come si sono visti i suoi tratti."; $("d-idx").textContent = ""; }
+    else {
+      var q = P[qIdx], date = new Date(q.giorno + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }), n = q.numeri || {};
+      var nums = [n.umore != null ? "umore " + n.umore : "", n.osservazioni ? n.osservazioni + " osservazioni" : "", n.ricerche ? n.ricerche + " ricerche" : "", n.libere ? n.libere + " azioni libere" : "", n.disegni ? n.disegni + " disegni" : ""].filter(Boolean).join(" · ");
+      page.innerHTML = "<span class='day'>" + esc(date) + (nums ? " — " + esc(nums) : "") + "</span>" + esc(q.testo) +
+        (q.tratti && q.tratti.length ? "<ul>" + q.tratti.map(function (t) { return "<li><b>" + esc(t.tratto) + "</b>: " + esc(t.come) + "</li>"; }).join("") + "</ul>" : "") +
+        (q.domanda ? "<span class='q'>" + esc(q.domanda) + "</span>" : "");
+      $("d-idx").textContent = (P.length - qIdx) + " di " + P.length;
+    }
+    var T = quad.trattiNuovi;
+    tb.innerHTML = "<h3>Tratti nuovi che stanno nascendo</h3>" + (T.length ? "<div class='ilist'>" + T.map(function (t) { return "<div><b>" + esc(t.nome) + "</b> — notato " + t.prove + (t.prove === 1 ? " giorno" : " giorni") + "<span>" + esc((t.fatti || []).slice(-2).join(" · ")) + "</span></div>"; }).join("") + "</div>" : "<p class='muted' style='margin:0'>Ancora nessuno. Compaiono qui quando l'osservatore nota un comportamento che torna e che non fa parte dei cinque tratti di partenza.</p>");
+  }
+  function setDiaryTab(t) {
+    dTab = t; document.querySelectorAll("[data-dt]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.dt === t ? "true" : "false"); });
+    $("d-page").hidden = t !== "koki"; $("o-page").hidden = t !== "oss"; $("o-traits").hidden = t !== "oss";
+    $("d-title").textContent = t === "koki" ? "Il diario di Kōki" : "Il quaderno dell'osservatore";
+    if (t === "koki") renderDiary();
+    else if (DEMO) { quad = { pagine: [], trattiNuovi: [] }; renderObserver(); }
+    else api("/api/quaderno").then(function (d) { quad = d; qIdx = 0; renderObserver(); }).catch(function () {});
+  }
+  document.querySelectorAll("[data-dt]").forEach(function (b) { b.addEventListener("click", function () { setDiaryTab(b.dataset.dt); }); });
+  $("d-prev").onclick = function () { if (dTab === "oss") { if (qIdx < quad.pagine.length - 1) { qIdx++; renderObserver(); } } else if (dIdx < diary.length - 1) { dIdx++; renderDiary(); } };
+  $("d-next").onclick = function () { if (dTab === "oss") { if (qIdx > 0) { qIdx--; renderObserver(); } } else if (dIdx > 0) { dIdx--; renderDiary(); } };
+
+  // ---------- laboratorio ----------
+  Object.keys(PLACE_NAME).forEach(function (k) { var o = document.createElement("option"); o.value = k; o.textContent = "Dove: " + PLACE_NAME[k]; $("l-where").appendChild(o); });
+  function renderLab() {
+    if (DEMO) { $("l-list").innerHTML = "<p class='muted' style='margin:0'>Nell'anteprima il laboratorio è spento.</p>"; return; }
+    api("/api/laboratorio").then(function (L) {
+      $("l-list").innerHTML = L.length ? L.map(function (i) { var d = new Date(i.t); return "<div><b>" + esc(d.toLocaleDateString("it-IT", { day: "numeric", month: "short" }) + " " + hhmm(i.t)) + "</b> · " + esc(PLACE_NAME[i.luogo] || i.luogo) + " — " + esc(i.testo) + "<span>" + esc(i.registro) + "</span></div>"; }).join("") : "<p class='muted' style='margin:0'>Nessun intervento finora: l'isola è com'era all'inizio.</p>";
+    }).catch(function () {});
+  }
+  $("l-send").addEventListener("click", function () {
+    var tx = $("l-text").value.trim(); if (!tx) return;
+    if (DEMO) { $("l-state").textContent = "Nell'anteprima non succede niente: serve il cervello acceso."; return; }
+    $("l-send").disabled = true; $("l-state").textContent = "Il Mondo ci sta lavorando…";
+    api("/api/laboratorio", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ testo: tx, luogo: $("l-where").value }) }).then(function (r) {
+      $("l-state").textContent = r.ok ? "Fatto: " + r.registro : (r.errore || "Non è successo niente."); if (r.ok) $("l-text").value = ""; renderLab(); refresh();
+    }).catch(function () { $("l-state").textContent = "Non è riuscito."; }).then(function () { $("l-send").disabled = false; });
+  });
+  function exportText() { return fetch("/api/esporta", { headers: { "x-koki-key": KEY } }).then(function (r) { if (!r.ok) throw new Error(); return r.text(); }); }
+  $("l-export").addEventListener("click", function () {
+    exportText().then(function (t) { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([t], { type: "text/markdown" })); a.download = "koki-esperimento-" + new Date().toISOString().slice(0, 10) + ".md"; document.body.appendChild(a); a.click(); a.remove(); }).catch(function () { $("l-state").textContent = "Esportazione non riuscita."; });
+  });
+  $("l-copy").addEventListener("click", function () {
+    exportText().then(function (t) { return navigator.clipboard.writeText(t); }).then(function () { $("l-state").textContent = "Copiato: ora puoi incollarlo in una chat con Claude."; }).catch(function () { $("l-state").textContent = "Non sono riuscito a copiare: usa «Scarica il file»."; });
+  });
   function openSheet(id) {
     document.querySelectorAll(".sheet").forEach(function (s) { s.classList.remove("open"); });
     $("s-" + id).classList.add("open"); closeCard();
     if (id === "mente" && STATE) renderMind();
     if (id === "disegni") renderGallery();
-    if (id === "diario") { if (DEMO) { diary = [{ giorno: new Date().toISOString().slice(0, 10), testo: "(Anteprima: il diario vero lo scrive Kōki quando il cervello è acceso.)" }]; dIdx = 0; renderDiary(); } else api("/api/diario").then(function (d) { diary = d; dIdx = 0; renderDiary(); }).catch(function () {}); }
+    if (id === "lab") renderLab();
+    if (id === "diario") { setDiaryTab("koki"); if (DEMO) { diary = [{ giorno: new Date().toISOString().slice(0, 10), testo: "(Anteprima: il diario vero lo scrive Kōki quando il cervello è acceso.)" }]; dIdx = 0; renderDiary(); } else api("/api/diario").then(function (d) { diary = d; dIdx = 0; renderDiary(); }).catch(function () {}); }
     if (id === "pass") setTimeout(function () { $("p-in").focus(); }, 50);
   }
   document.querySelectorAll("[data-open]").forEach(function (b) { b.addEventListener("click", function () { var s = $("s-" + b.dataset.open); if (s.classList.contains("open")) s.classList.remove("open"); else openSheet(b.dataset.open); }); });

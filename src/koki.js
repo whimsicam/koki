@@ -5,7 +5,7 @@
 
 import { DurableObject } from "cloudflare:workers";
 import { PLACES, CAT_SPOTS, TELESCOPE_PARTS, ACTIONS, FORME, dist, season, weatherWords, isRainy, localTime, pick, a as al } from "./world.js";
-import { decisionPrompt, reflectionPrompt, diaryPrompt, chatPrompt, narratorPrompt, askModel, fallbackDecide } from "./mind.js";
+import { decisionPrompt, reflectionPrompt, diaryPrompt, chatPrompt, narratorPrompt, lookPrompt, observerPrompt, stimulusPrompt, CORE, askModel, fallbackDecide } from "./mind.js";
 
 const H = 3600000, MIN = 60000;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -23,6 +23,10 @@ export class Koki extends DurableObject {
       CREATE TABLE IF NOT EXISTS opere (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, tipo TEXT, titolo TEXT);
       CREATE TABLE IF NOT EXISTS log (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, tipo TEXT, testo TEXT);
       CREATE TABLE IF NOT EXISTS immagini (opera INTEGER PRIMARY KEY, mime TEXT, dati TEXT);
+      CREATE TABLE IF NOT EXISTS quaderno (giorno TEXT PRIMARY KEY, t INTEGER, testo TEXT, tratti TEXT, domanda TEXT, numeri TEXT);
+      CREATE TABLE IF NOT EXISTS tratti_nuovi (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT UNIQUE, prove INTEGER, primo TEXT, ultimo TEXT, fatti TEXT);
+      CREATE TABLE IF NOT EXISTS interventi (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, testo TEXT, luogo TEXT, registro TEXT);
+      CREATE TABLE IF NOT EXISTS umori (t INTEGER, umore REAL, luogo TEXT);
       CREATE TABLE IF NOT EXISTS oggetti (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, luogo TEXT, nome TEXT, descrizione TEXT, forma TEXT, colore TEXT, grandezza TEXT, rotto INTEGER DEFAULT 0, slot INTEGER);
     `);
   }
@@ -173,7 +177,7 @@ export class Koki extends DurableObject {
     const az = m.azione, ogg = (m.oggetto || "").toString().trim();
     let min = clamp(parseInt(m.minuti, 10) || 15, 5, 30);
     const needs = (luogo) => { if (S.luogo !== luogo) { S.coda.unshift(m); this.avvia(S, W, { azione: "vai", oggetto: luogo, minuti: 10, perche: "per " + az.replace("_", " ") }, now, T); return true; } return false; };
-    if (!ACTIONS[az]) return false;
+    if (!ACTIONS[az] && az !== "guarda_stelle") return false;
     if (az === "vai") {
       const key = this.trovaLuogo(ogg);
       if (!key || key === S.luogo) return false;
@@ -186,10 +190,10 @@ export class Koki extends DurableObject {
     if (az === "aggiusta_telescopio" && needs("collina")) return true;
     if (az === "sistema_collezione" && needs("casa")) return true;
     if (az === "leggi_bottiglia") { if (!W.bottiglia) return false; if (needs("spiaggia")) return true; }
-    if (az === "guarda_stelle" && !T.notte) { m = { ...m, azione: "osserva", oggetto: "il cielo" }; }
+    if (az === "guarda_stelle") m = { ...m, azione: "osserva", oggetto: T.notte ? "le stelle" : "il cielo" };
     if (az === "libera" && ogg.length < 4) return false;
     if (az === "dormi") { S.dorme = true; min = 8 * 60; }
-    S.attivita = { azione: m.azione, oggetto: m.azione === "osserva" ? (m.oggetto || ogg) : ogg, luogo: S.luogo, inizio: now, fine: now + min * MIN / this.speed(), perche: m.perche || "" };
+    S.attivita = { azione: m.azione, oggetto: m.oggetto ? String(m.oggetto).trim() : ogg, luogo: S.luogo, inizio: now, fine: now + min * MIN / this.speed(), perche: m.perche || "" };
     this.logga(now, "azione", `${this.descriviAzione(S.attivita)}. ${m.perche || ""}`);
     return true;
   }
@@ -208,7 +212,7 @@ export class Koki extends DurableObject {
              libera: (a.oggetto || "fa qualcosa di suo").replace(/^(provo a |voglio |vorrei )/i, ""), riposa: "si riposa", dormi: "dorme", guarda_stelle: "guarda le stelle", aggiusta_telescopio: "prova ad aggiustare il telescopio", leggi_bottiglia: "apre la bottiglia", sistema_collezione: "sistema la sua collezione" }[a.azione] || a.azione;
   }
 
-  concludi(S, W, T, now) {
+  async concludi(S, W, T, now) {
     const a = S.attivita, b = S.corpo, P = PLACES[S.luogo], ogg = (a.oggetto || "").toLowerCase();
     let esito = "", forza = .3;
     switch (a.azione) {
@@ -230,19 +234,27 @@ export class Koki extends DurableObject {
         break;
       }
       case "osserva": {
-        let d;
+        const gia = this.giaOsservato(S, ogg);
+        let d = null;
         if ((ogg.includes("gatto")) && W.gatto === S.luogo) d = pick(["Il gatto di pietra ha la coda arrotolata e gli occhi socchiusi.", "Il gatto di pietra è freddo e liscio. Sotto le zampe c'è un po' di terra smossa.", "Il gatto di pietra guarda verso il mare."]);
         else if (ogg.includes("telescop") && S.luogo === "collina") {
           S.sa.telescopio = true;
           d = W.telescopio.aggiustato ? "Il telescopio funziona: dentro si vedono le stelle da vicino." : "Il telescopio è rotto: mancano " + W.telescopio.mancanti.join(", ") + ". Forse sono da qualche parte sull'isola.";
           forza = .7;
         } else if (ogg.includes("impront") && S.luogo === "spiaggia" && W.impronte) d = "Le impronte sono grandi e tonde, con quattro dita. Partono dal mare e ci ritornano.";
-        else if (this.oggettoQui(S, ogg)) { const o = this.oggettoQui(S, ogg); d = `${o.nome}: ${o.descrizione}${o.rotto ? " È rotto." : ""}`; forza = .5; }
-        else if (ogg.includes("cielo")) d = T.notte ? (T.nuvole > 60 ? "Il cielo è coperto, non si vede neanche una stella." : "Il cielo è pieno di stelle.") : `Il cielo oggi è ${T.meteo}.`;
-        else if (S.luogo === "lanterna" && T.notte && W.lanterna) d = "La lanterna di pietra è accesa! Dentro c'è una fiammella, ma qui non c'è nessuno.";
-        else d = pick(T.notte && P.dettagliNotte ? P.dettagliNotte.concat(P.dettagli) : P.dettagli);
+        else if (/stell|cielo|luna/.test(ogg) && T.notte) {
+          // le stelle: il suo amore, e il suo buio
+          if (T.nuvole > 60 || T.pioggia) { d = "Il cielo è coperto: stanotte non si vede neanche una stella."; S.umore -= .05; }
+          else if (b.paura > .5 && !PLACES[S.luogo].coperto && Math.random() < .35) { d = "Ho alzato gli occhi verso le stelle, ma il buio intorno mi ha fatto troppa paura e sono scappato."; S.umore -= .1; forza = .6; }
+          else if (W.telescopio.aggiustato && S.luogo === "collina") { d = "Nel telescopio le stelle sono enormi e brillano di colori diversi."; S.umore += .25; forza = .7; }
+          else { d = null; S.umore += .2; forza = .6; S.stelleViste = (S.stelleViste || 0) + 1; }
+        }
+        if (!d && this.oggettoQui(S, ogg)) { const o = this.oggettoQui(S, ogg); if (!gia.length) { d = `${o.nome}: ${o.descrizione}${o.rotto ? " È rotto." : ""}`; forza = .5; } }
+        if (!d && S.luogo === "lanterna" && T.notte && W.lanterna && !gia.length) d = "La lanterna di pietra è accesa! Dentro c'è una fiammella, ma qui non c'è nessuno.";
+        if (!d) d = await this.sguardo(S, T, ogg || "intorno", gia);
         esito = `Ho osservato ${a.oggetto || "intorno"}: ${d}`;
-        b.curiosita -= .25;
+        b.curiosita -= .25 / (1 + gia.length * .5);
+        S.osservati = (S.osservati || []).concat([{ cosa: ogg || "intorno", luogo: S.luogo, t: now, vista: d.slice(0, 160) }]).slice(-40);
         this.ricorda(now, esito, forza + .05, S.luogo);
         break;
       }
@@ -262,13 +274,6 @@ export class Koki extends DurableObject {
       }
       case "gioca": esito = `Ho giocato${a.oggetto ? ": " + a.oggetto : ""}.`; b.espressione -= .3; S.umore += .1; this.ricorda(now, esito, .3, S.luogo); break;
       case "riposa": b.energia += .2 * ((a.fine - a.inizio) * this.speed() / (30 * MIN)); esito = "Mi sono riposato un po'."; break;
-      case "guarda_stelle": {
-        if (T.nuvole > 60 || T.pioggia) { esito = "Volevo guardare le stelle, ma il cielo era coperto."; S.umore -= .05; }
-        else if (b.paura > .5 && Math.random() < .35) { esito = "Ho provato a guardare le stelle, ma il buio mi ha fatto troppa paura e sono scappato."; S.umore -= .1; forza = .6; }
-        else { esito = W.telescopio.aggiustato && S.luogo === "collina" ? "Ho guardato le stelle con il telescopio: sono enormi e brillano di colori diversi!" : "Ho guardato le stelle. Erano tantissime."; S.umore += .25; forza = .65; }
-        this.ricorda(now, esito, forza, S.luogo);
-        break;
-      }
       case "aggiusta_telescopio": {
         const have = W.telescopio.mancanti.filter((n) => S.inventario.includes(n));
         if (!have.length) esito = "Ho guardato il telescopio, ma non ho ancora nessun pezzo da montare.";
@@ -327,6 +332,23 @@ export class Koki extends DurableObject {
       this.sql.exec("INSERT OR REPLACE INTO immagini (opera, mime, dati) VALUES (?, ?, ?)", opera, mime, dati);
       this.sql.exec("DELETE FROM immagini WHERE opera NOT IN (SELECT opera FROM immagini ORDER BY opera DESC LIMIT 60)");
     } catch (e) { this.logga(now, "errore", "Il disegno non è venuto: " + String(e && e.message || e).slice(0, 200)); }
+  }
+
+  // le cose già notate guardando la stessa cosa nello stesso posto (ultimi 3 giorni)
+  giaOsservato(S, ogg) {
+    const k = (ogg || "intorno").toLowerCase(), da = Date.now() - 72 * H;
+    const simile = (x) => { x = x.toLowerCase(); return x === k || x.includes(k) || k.includes(x) || (/stell|cielo|luna/.test(x) && /stell|cielo|luna/.test(k)); };
+    return (S.osservati || []).filter((o) => o.t > da && o.luogo === S.luogo && simile(o.cosa)).map((o) => o.vista).slice(-8);
+  }
+  async sguardo(S, T, cosa, gia) {
+    const P = PLACES[S.luogo];
+    if (this.budget(S, T)) {
+      try { const r = await askModel(this.env, lookPrompt(S, this.contesto(S, T), cosa, gia), 160); if (r && r.vista) return String(r.vista).slice(0, 300); }
+      catch (e) { this.logga(Date.now(), "errore", "Lo sguardo non è riuscito: " + String(e && e.message || e).slice(0, 160)); }
+    }
+    if (/stell|cielo|luna/.test(cosa)) return T.notte ? "Il cielo è pieno di stelle." : `Il cielo oggi è ${T.meteo}.`;
+    const pool = (T.notte && P.dettagliNotte ? P.dettagliNotte.concat(P.dettagli) : P.dettagli).filter((x) => !gia.includes(x));
+    return pool.length ? pick(pool) : "Niente di nuovo: è tutto come l'ultima volta.";
   }
 
   oggettoQui(S, testo) {
@@ -407,8 +429,16 @@ export class Koki extends DurableObject {
       convinzioni: this.sql.exec("SELECT id, testo, prove FROM convinzioni ORDER BY prove DESC, id DESC LIMIT 5").toArray(),
       aperti: this.sql.exec("SELECT id, tipo, testo FROM aperti WHERE chiuso = 0 ORDER BY id DESC LIMIT 5").toArray(),
       oggettiQui: this.sql.exec("SELECT id, nome, descrizione, rotto FROM oggetti WHERE luogo = ? ORDER BY id DESC LIMIT 8", S.luogo).toArray(),
-      attivita: this.descriviAzione(S.attivita)
+      attivita: this.descriviAzione(S.attivita),
+      osservati: this.riassuntoOsservati(S),
+      domani: S.domani && S.domani.giorno === T.giorno ? S.domani.testo : ""
     };
+  }
+
+  riassuntoOsservati(S) {
+    const da = Date.now() - 48 * H, c = {};
+    for (const o of (S.osservati || [])) if (o.t > da) { const k = `${o.cosa} (${PLACES[o.luogo] ? PLACES[o.luogo].nome : o.luogo})`; c[k] = (c[k] || 0) + 1; }
+    return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, n]) => n > 1 ? `${k}, ${n} volte` : k);
   }
 
   async decidi(S, W, T, now) {
@@ -468,13 +498,15 @@ export class Koki extends DurableObject {
       ora: T.ora,
       oggi: this.sql.exec("SELECT testo FROM memorie WHERE t > ? ORDER BY id LIMIT 25", da).toArray(),
       opere: this.sql.exec("SELECT titolo FROM opere WHERE t > ?", da).toArray().map((o) => o.titolo),
-      cambiamenti: this.sql.exec("SELECT testo FROM log WHERE t > ? AND tipo IN ('racconto', 'mondo') ORDER BY id LIMIT 15", da).toArray().map((l) => l.testo)
+      cambiamenti: this.sql.exec("SELECT testo FROM log WHERE t > ? AND tipo IN ('racconto', 'mondo') ORDER BY id LIMIT 15", da).toArray().map((l) => l.testo),
+      ieri: S.domani && S.domani.scritto !== giorno ? S.domani.testo : ""
     };
     let testo = null;
     if (this.budget(S, T, 20)) {
       try {
         const r = await askModel(this.env, diaryPrompt(S, ctx), 600);
         testo = r.diario;
+        if (r.domani) { const dom = localTime(now + 18 * H, this.env.TIMEZONE || "Europe/Rome").giorno; S.domani = { giorno: dom, scritto: giorno, testo: String(r.domani).slice(0, 200) }; }
         const sh = S.scheda;
         if (r.togli) { const k = r.togli.toLowerCase(); sh.abitudini = sh.abitudini.filter((x) => !x.toLowerCase().includes(k) && !k.includes(x.toLowerCase())); sh.gusti = sh.gusti.filter((x) => !x.toLowerCase().includes(k) && !k.includes(x.toLowerCase())); }
         if (r.aggiungi_abitudine && sh.abitudini.length < 8) { sh.abitudini.push(r.aggiungi_abitudine.slice(0, 120)); this.logga(now, "scheda", "Nuova abitudine: " + r.aggiungi_abitudine); }
@@ -484,6 +516,110 @@ export class Koki extends DurableObject {
     if (!testo) testo = "Oggi:\n" + ctx.oggi.slice(-8).map((m) => "- " + m.testo).join("\n");
     this.sql.exec("INSERT INTO diario (giorno, t, testo) VALUES (?, ?, ?) ON CONFLICT(giorno) DO UPDATE SET testo = excluded.testo, t = excluded.t", giorno, now, testo.slice(0, 4000));
     this.logga(now, "diario", "Ha scritto la pagina di diario del " + giorno + ".");
+    await this.osserva(S, T, now, giorno, testo);
+  }
+
+  // ---------- il quaderno dell'osservatore ----------
+  async osserva(S, T, now, giorno, diarioKoki) {
+    const da = now - 20 * H, tz = this.env.TIMEZONE || "Europe/Rome";
+    const righe = this.sql.exec("SELECT t, tipo, testo FROM log WHERE t > ? AND tipo NOT IN ('errore', 'laboratorio') ORDER BY id", da).toArray();
+    const cronaca = righe.slice(-70).map((l) => ({ ora: localTime(l.t, tz).testo.split(" ").pop(), tipo: l.tipo, testo: l.testo.slice(0, 220) }));
+    const luoghiC = {};
+    for (const u of this.sql.exec("SELECT luogo FROM umori WHERE t > ?", da).toArray()) luoghiC[u.luogo] = (luoghiC[u.luogo] || 0) + 1;
+    const umoreM = this.sql.exec("SELECT AVG(umore) AS m FROM umori WHERE t > ?", da).one().m;
+    const numeri = {
+      umore: umoreM == null ? null : Math.round(umoreM * 100) / 100,
+      luoghi: luoghiC,
+      libere: righe.filter((l) => l.tipo === "racconto").length,
+      osservazioni: righe.filter((l) => l.tipo === "azione" && /^osserva/.test(l.testo)).length,
+      ricerche: righe.filter((l) => l.tipo === "azione" && /^cerca/.test(l.testo)).length,
+      disegni: righe.filter((l) => l.tipo === "disegno").length,
+      pensieri: righe.filter((l) => l.tipo === "pensiero").length
+    };
+    const ctx = {
+      giorno, eta: Math.max(1, Math.ceil((now - S.nato) / (24 * H))), cronaca,
+      luoghi: Object.entries(luoghiC).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${PLACES[k] ? PLACES[k].nome : k} ${n}`),
+      umore: numeri.umore == null ? "sconosciuto" : numeri.umore,
+      interventi: this.sql.exec("SELECT testo, registro FROM interventi WHERE t > ?", da).toArray().map((i) => `${i.testo} → ${i.registro}`),
+      diarioKoki: diarioKoki || "",
+      precedenti: this.sql.exec("SELECT giorno, testo FROM quaderno WHERE giorno < ? ORDER BY giorno DESC LIMIT 3", giorno).toArray().reverse(),
+      trattiNuovi: this.sql.exec("SELECT nome, prove FROM tratti_nuovi ORDER BY prove DESC LIMIT 10").toArray()
+    };
+    let r = null;
+    if (this.budgetGrande(S, T)) { try { r = await askModel(this.env, observerPrompt(ctx), 900, this.env.BIG_MODEL); } catch (e) { this.logga(now, "errore", "L'osservatore (modello grande) non ha scritto: " + String(e && e.message || e).slice(0, 200)); } }
+    if (!r && this.budget(S, T, 25)) { try { r = await askModel(this.env, observerPrompt(ctx), 800); } catch (e) { this.logga(now, "errore", "L'osservatore non ha scritto: " + String(e && e.message || e).slice(0, 200)); } }
+    if (!r || !r.note) return;
+    const tratti = (r.tratti || []).slice(0, 8).map((x) => ({ tratto: String(x.tratto || "").slice(0, 60), come: String(x.come || "").slice(0, 300) }));
+    this.sql.exec("INSERT INTO quaderno (giorno, t, testo, tratti, domanda, numeri) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(giorno) DO UPDATE SET t = excluded.t, testo = excluded.testo, tratti = excluded.tratti, domanda = excluded.domanda, numeri = excluded.numeri",
+      giorno, now, String(r.note).slice(0, 4000), JSON.stringify(tratti), String(r.domanda || "").slice(0, 300), JSON.stringify(numeri));
+    for (const n of (r.tratti_nuovi || []).slice(0, 3)) {
+      const nome = String(n.nome || "").trim().toLowerCase().slice(0, 60); if (nome.length < 3) continue;
+      const ex = this.sql.exec("SELECT id, fatti, ultimo FROM tratti_nuovi WHERE nome = ?", nome).toArray()[0];
+      const fatto = `${giorno}: ${String(n.fatto || "").slice(0, 200)}`;
+      if (ex) { if (ex.ultimo !== giorno) this.sql.exec("UPDATE tratti_nuovi SET prove = prove + 1, ultimo = ?, fatti = ? WHERE id = ?", giorno, JSON.stringify(JSON.parse(ex.fatti || "[]").concat([fatto]).slice(-8)), ex.id); }
+      else this.sql.exec("INSERT INTO tratti_nuovi (nome, prove, primo, ultimo, fatti) VALUES (?, 1, ?, ?, ?)", nome, giorno, giorno, JSON.stringify([fatto]));
+    }
+  }
+
+  // ---------- il laboratorio dello sperimentatore ----------
+  async stimolo(testo, luogo, now) {
+    const { S, W } = this.init(now), T = this.tempo(S, now), ctx = this.contesto(S, T);
+    if (luogo && !PLACES[luogo]) luogo = "";
+    let r = null;
+    if (this.budgetGrande(S, T)) { try { r = await askModel(this.env, stimulusPrompt(S, ctx, testo, luogo), 600, this.env.BIG_MODEL); } catch (e) { this.logga(now, "errore", "Il laboratorio (modello grande): " + String(e && e.message || e).slice(0, 200)); } }
+    if (!r && this.budget(S, T, 40)) { try { r = await askModel(this.env, stimulusPrompt(S, ctx, testo, luogo), 550); } catch (e) { this.logga(now, "errore", "Il laboratorio: " + String(e && e.message || e).slice(0, 200)); } }
+    if (!r) { this.put("S", S); return { errore: "Il Mondo adesso non risponde (cervello spento o finito per oggi). Riprova più tardi." }; }
+    const dove = luogo || (PLACES[r.luogo] ? r.luogo : S.luogo);
+    const creati = [];
+    for (const c of (r.crea || []).slice(0, 3)) {
+      if (!c || !c.nome) continue;
+      const slot = this.sql.exec("SELECT COALESCE(MAX(slot), -1) + 1 AS n FROM oggetti WHERE luogo = ?", dove).one().n;
+      this.sql.exec("INSERT INTO oggetti (t, luogo, nome, descrizione, forma, colore, grandezza, slot) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", now, dove, c.nome.slice(0, 60), String(c.descrizione || "").slice(0, 240),
+        FORME.includes(c.forma) ? c.forma : "altro", /^#[0-9a-f]{6}$/i.test(c.colore || "") ? c.colore : "", ["piccola", "media", "grande"].includes(c.grandezza) ? c.grandezza : "piccola", slot);
+      creati.push(c.nome);
+    }
+    const evento = String(r.evento || "").trim();
+    if (evento && (r.ovunque || S.luogo === dove)) { S.novita.push(evento); if (!S.dorme) S.urgente = true; }
+    if (creati.length && S.luogo === dove && !S.dorme) S.novita.push(`Qui ${al(PLACES[dove].nome)} c'è qualcosa che prima non c'era: ${creati.join(", ")}.`);
+    const registro = String(r.registro || "").slice(0, 300) || ("Fatto accadere " + al(PLACES[dove].nome) + ".");
+    this.sql.exec("INSERT INTO interventi (t, testo, luogo, registro) VALUES (?, ?, ?, ?)", now, testo, dove, registro);
+    this.logga(now, "laboratorio", `Stimolo: ${testo} → ${registro}`);
+    if (creati.length) this.logga(now, "mondo", `Qualcosa è comparso ${al(PLACES[dove].nome)}: ${creati.join(", ")}.`);
+    if (evento) this.logga(now, "mondo", evento);
+    this.put("S", S); this.put("W", W);
+    return { ok: true, luogo: dove, registro, evento, creati };
+  }
+
+  // tutto quello che serve a Claude (o a te) per leggere l'esperimento, in un solo testo
+  esporta() {
+    const now = Date.now(), { S, W } = this.init(now), tz = this.env.TIMEZONE || "Europe/Rome";
+    const d = (t) => localTime(t, tz).testo;
+    const out = [`# L'esperimento Kōki — esportato il ${d(now)}`, `Nato il ${d(S.nato)} (${Math.ceil((now - S.nato) / (24 * H))} giorni).`, "",
+      "## Tratti di partenza", ...CORE.map((c) => "- " + c), "",
+      "## Come si descrive lui", "Abitudini: " + (S.scheda.abitudini.join("; ") || "nessuna"), "Gusti: " + (S.scheda.gusti.join("; ") || "nessuno"), "",
+      "## Tratti nuovi ipotizzati dall'osservatore", ...this.sql.exec("SELECT nome, prove, primo, ultimo, fatti FROM tratti_nuovi ORDER BY prove DESC").toArray().map((t) => `- ${t.nome} (notato ${t.prove} giorni, dal ${t.primo} al ${t.ultimo}): ${JSON.parse(t.fatti || "[]").join(" | ")}`), "",
+      "## Convinzioni", ...this.sql.exec("SELECT testo, prove FROM convinzioni ORDER BY prove DESC").toArray().map((c) => `- ${c.testo} (${c.prove})`), "",
+      "## Pensieri aperti", ...this.sql.exec("SELECT tipo, testo FROM aperti WHERE chiuso = 0").toArray().map((a) => `- ${a.tipo}: ${a.testo}`), "",
+      "## Collezione", S.inventario.join(", ") || "niente", "",
+      "## Cose sull'isola (costruite o comparse)", ...this.sql.exec("SELECT t, luogo, nome, descrizione, rotto FROM oggetti ORDER BY id").toArray().map((o) => `- ${d(o.t)}, ${PLACES[o.luogo] ? PLACES[o.luogo].nome : o.luogo}: ${o.nome} — ${o.descrizione}${o.rotto ? " (rotto)" : ""}`), "",
+      "## Opere", ...this.sql.exec("SELECT t, tipo, titolo FROM opere ORDER BY id").toArray().map((o) => `- ${d(o.t)}: ${o.tipo} — ${o.titolo}`), "",
+      "## Interventi dello sperimentatore", ...this.sql.exec("SELECT t, testo, luogo, registro FROM interventi ORDER BY id").toArray().map((i) => `- ${d(i.t)} (${i.luogo}): ${i.testo} → ${i.registro}`), ""];
+    const quad = this.sql.exec("SELECT giorno, testo, tratti, domanda, numeri FROM quaderno ORDER BY giorno").toArray();
+    const diar = Object.fromEntries(this.sql.exec("SELECT giorno, testo FROM diario").toArray().map((x) => [x.giorno, x.testo]));
+    const giorni = [...new Set(quad.map((q) => q.giorno).concat(Object.keys(diar)))].sort().slice(-60);
+    out.push("## Giorno per giorno");
+    for (const g of giorni) {
+      const q = quad.find((x) => x.giorno === g);
+      out.push("", `### ${g}`);
+      if (diar[g]) out.push("**Diario di Kōki:**", diar[g]);
+      if (q) {
+        out.push("**Quaderno dell'osservatore:**", q.testo);
+        const tr = JSON.parse(q.tratti || "[]"); if (tr.length) out.push(...tr.map((t) => `- ${t.tratto}: ${t.come}`));
+        if (q.domanda) out.push("Domanda: " + q.domanda);
+        if (q.numeri) out.push("Numeri: " + q.numeri);
+      }
+    }
+    return out.join("\n");
   }
 
   // ---------- un turno di vita ----------
@@ -496,6 +632,7 @@ export class Koki extends DurableObject {
     const T = this.tempo(S, now);
     this.mondo(S, W, T, now);
     this.corpo(S, T, dtH);
+    if (!S.dorme) { this.sql.exec("INSERT INTO umori (t, umore, luogo) VALUES (?, ?, ?)", now, S.umore, S.luogo); this.sql.exec("DELETE FROM umori WHERE t < ?", now - 120 * 24 * H); }
 
     if (S.dorme) {
       if (!T.notte && T.ora24 >= 6.5 && S.corpo.energia > .7) {
@@ -512,7 +649,7 @@ export class Koki extends DurableObject {
       S.attivita = null; S.coda = [{ azione: "dormi", minuti: 60, perche: "non ce la faccio più, mi si chiudono gli occhi" }];
       this.logga(now, "evento", "Kōki è stanchissimo.");
     }
-    if (S.attivita && now >= S.attivita.fine) { if (S.attivita.azione === "libera") await this.narra(S, W, T, now); else this.concludi(S, W, T, now); S.attivita = null; }
+    if (S.attivita && now >= S.attivita.fine) { if (S.attivita.azione === "libera") await this.narra(S, W, T, now); else await this.concludi(S, W, T, now); S.attivita = null; }
     if (S.urgente && S.attivita) { S.attivita = null; S.coda = []; }
     if (!S.attivita) {
       while (S.coda.length && !S.attivita && !S.urgente) { const m = S.coda.shift(); this.avvia(S, W, m, now, T); }
@@ -556,6 +693,18 @@ export class Koki extends DurableObject {
     if (p === "/api/diario") return json(this.sql.exec("SELECT giorno, testo FROM diario ORDER BY giorno DESC LIMIT 120").toArray());
     if (p === "/api/disegno") { const r = this.sql.exec("SELECT mime, dati FROM immagini WHERE opera = ?", parseInt(url.searchParams.get("id"), 10) || 0).toArray()[0]; return r ? json(r) : json({ errore: "Nessuna immagine" }, 404); }
     if (p === "/api/ricordi") return json(this.sql.exec("SELECT t, testo, forza, tipo, luogo FROM memorie ORDER BY id DESC LIMIT 140").toArray());
+    if (p === "/api/quaderno") return json({
+      pagine: this.sql.exec("SELECT giorno, testo, tratti, domanda, numeri FROM quaderno ORDER BY giorno DESC LIMIT 120").toArray().map((q) => ({ ...q, tratti: JSON.parse(q.tratti || "[]"), numeri: JSON.parse(q.numeri || "{}") })),
+      trattiNuovi: this.sql.exec("SELECT nome, prove, primo, ultimo, fatti FROM tratti_nuovi ORDER BY prove DESC, ultimo DESC LIMIT 30").toArray().map((t) => ({ ...t, fatti: JSON.parse(t.fatti || "[]") }))
+    });
+    if (p === "/api/laboratorio" && req.method === "GET") return json(this.sql.exec("SELECT t, testo, luogo, registro FROM interventi ORDER BY id DESC LIMIT 100").toArray());
+    if (p === "/api/laboratorio" && req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      const testo = String(body.testo || "").trim().slice(0, 500);
+      if (!testo) return json({ errore: "Scrivi cosa vuoi far accadere." }, 400);
+      return json(await this.stimolo(testo, String(body.luogo || ""), now));
+    }
+    if (p === "/api/esporta") return new Response(this.esporta(), { headers: { "content-type": "text/markdown; charset=utf-8" } });
     if (p === "/api/turno" && req.method === "POST") { await this.turno(); return json(this.vista()); }
     if (p === "/api/prova" && req.method === "POST") { // per le prove: fa riflettere o scrivere il diario subito
       const { S } = this.init(now), T = this.tempo(S, now), cosa = url.searchParams.get("cosa");
@@ -593,7 +742,7 @@ export class Koki extends DurableObject {
       return json({ risposta: r.risposta, pensiero: r.pensiero || "" });
     }
     if (p === "/api/rinasci" && req.method === "POST" && url.searchParams.get("conferma") === "RINASCI") {
-      this.sql.exec("DELETE FROM stato; DELETE FROM memorie; DELETE FROM convinzioni; DELETE FROM aperti; DELETE FROM diario; DELETE FROM opere; DELETE FROM log; DELETE FROM oggetti; DELETE FROM immagini;");
+      this.sql.exec("DELETE FROM stato; DELETE FROM memorie; DELETE FROM convinzioni; DELETE FROM aperti; DELETE FROM diario; DELETE FROM opere; DELETE FROM log; DELETE FROM oggetti; DELETE FROM immagini; DELETE FROM quaderno; DELETE FROM tratti_nuovi; DELETE FROM interventi; DELETE FROM umori;");
       this.init(now);
       return json({ ok: true });
     }

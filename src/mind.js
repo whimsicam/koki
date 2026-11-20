@@ -63,6 +63,8 @@ export function decisionPrompt(S, W, ctx) {
     "Ricordi che ti tornano in mente:\n" + list(ctx.ricordi, (r) => "- " + r.testo),
     ctx.convinzioni.length ? "Cose di cui sei convinto:\n" + list(ctx.convinzioni, (c) => "- " + c.testo) : "",
     ctx.aperti.length ? "Pensieri che ti porti dietro (desideri, domande, promesse):\n" + list(ctx.aperti, (a) => `- [${a.id}] ${a.tipo}: ${a.testo}`) : "",
+    ctx.osservati && ctx.osservati.length ? "Cose che hai già osservato di recente: " + ctx.osservati.join("; ") + "." : "",
+    ctx.domani ? `Ieri sera, nel diario, avevi scritto cosa volevi fare oggi: "${ctx.domani}". (Puoi farlo, cambiare idea o dimenticartene.)` : "",
     `Le tue cose: ${S.inventario.length ? S.inventario.slice(-12).join(", ") : "ancora niente"}.`,
     "Luoghi dell'isola:\n" + places,
     "Cosa puoi fare (scegli SOLO da qui):\n" + Object.values(ACTIONS).map((a) => "- " + a).join("\n"),
@@ -129,7 +131,9 @@ export function diaryPrompt(S, ctx) {
     "Le cose che ti sono successe oggi:\n" + list(ctx.oggi, (r) => "- " + r.testo),
     ctx.opere.length ? "Cose che hai creato oggi: " + ctx.opere.join(", ") : "",
     ctx.cambiamenti && ctx.cambiamenti.length ? "Cose che sono successe o che hai cambiato sull'isola oggi:\n" + ctx.cambiamenti.map((c) => "- " + c).join("\n") : "",
-    "Scrivi il diario in prima persona, tra 80 e 180 parole, con la tua voce: cosa hai fatto, cosa hai notato, cosa ti è piaciuto o ti ha fatto paura, cosa vuoi fare domani.",
+    ctx.ieri ? `Ieri avevi scritto che oggi volevi: "${ctx.ieri}".` : "",
+    "Scrivi il diario in prima persona, con la tua voce, rispondendo a queste domande: che cosa hai fatto oggi? Cosa ti è piaciuto? Cosa non ti è piaciuto? Cosa vuoi fare domani? Puoi scrivere poco o tanto, come ti viene.",
+    "In domani scrivi, in una frase, cosa vuoi fare domani.",
     "Poi, mentre ti addormenti, puoi cambiare UNA piccola cosa di come ti descrivi: aggiungere un'abitudine o un gusto che hai scoperto oggi, oppure toglierne uno che non è più vero.",
     `Abitudini attuali: ${sheet.abitudini.length ? sheet.abitudini.join("; ") : "nessuna"}.`,
     `Gusti attuali: ${sheet.gusti.length ? sheet.gusti.join("; ") : "nessuno"}.`
@@ -140,11 +144,94 @@ export function diaryPrompt(S, ctx) {
       type: "object",
       properties: {
         diario: { type: "string" },
+        domani: { type: "string" },
         aggiungi_abitudine: { type: "string" },
         aggiungi_gusto: { type: "string" },
         togli: { type: "string" }
       },
       required: ["diario"]
+    }
+  };
+}
+
+// Lo sguardo: quando Kōki osserva qualcosa, il Mondo gli mostra un dettaglio nuovo (mai uno già visto).
+export function lookPrompt(S, ctx, cosa, gia) {
+  const p = PLACES[S.luogo];
+  const system = "Sei il Mondo dell'isola di Kōki: descrivi in modo concreto e coerente quello che si vede. Non sei Kōki e non dici cosa deve pensare o provare. Segreti che non devi mai risolvere: " + SEGRETI.join(" ") + " Scrivi in italiano semplice.";
+  const user = [
+    `Ora: ${ctx.ora}, ${ctx.stagione}, ${ctx.meteo}, ${ctx.notte ? "notte" : "giorno"}.`,
+    `Luogo: ${p.nome}. ${p.desc} Dettagli noti: ${(ctx.notte && p.dettagliNotte ? p.dettagliNotte.concat(p.dettagli) : p.dettagli).join(" ")}`,
+    ctx.oggettiQui.length ? "Cose presenti qui: " + ctx.oggettiQui.map((o) => `${o.nome} (${o.descrizione})`).join("; ") : "",
+    `Kōki osserva con attenzione: "${cosa}".`,
+    gia.length ? "Cose che ha già notato guardando la stessa cosa (NON ripeterle, trova altro):\n" + gia.map((g) => "- " + g).join("\n") : "",
+    "In vista scrivi 1-2 frasi su cosa vede davvero adesso: un dettaglio concreto e nuovo (forma, colore, movimento, suono, un piccolo cambiamento dovuto all'ora, al meteo o alla stagione). Se guarda il cielo, rispetta il meteo vero. Non inventare creature parlanti."
+  ].filter(Boolean).join("\n\n");
+  return { system, user, schema: { type: "object", properties: { vista: { type: "string" } }, required: ["vista"] } };
+}
+
+// Il quaderno dell'osservatore: ogni notte il Mondo annota, da fuori, com'è andata la giornata di Kōki.
+export const TRATTI = ["curiosità", "testardaggine", "creatività", "paura del buio e amore per le stelle", "collezionare piccole cose"];
+export function observerPrompt(ctx) {
+  const system = [
+    "Sei un antropologo che osserva da lontano Kōki, un piccolo essere che vive da solo su un'isola. Lui non sa di essere osservato.",
+    "Scrivi note di campo: neutre, concrete, basate SOLO sui fatti che ti vengono dati. Distingui quello che si è visto da quello che ipotizzi (usa \"sembra\", \"forse\"). Niente giudizi, niente consigli, niente frasi poetiche.",
+    "Tratti di partenza di Kōki (dati alla nascita): " + CORE.join("; ") + ".",
+    "Scrivi in italiano."
+  ].join("\n");
+  const user = [
+    `Giornata del ${ctx.giorno}. Kōki ha ${ctx.eta} giorni di vita.`,
+    "Cronaca della giornata (azioni, risultati, pensieri, cose successe):\n" + list(ctx.cronaca, (l) => `- ${l.ora} [${l.tipo}] ${l.testo}`),
+    ctx.luoghi.length ? "Tempo passato nei luoghi (numero di azioni): " + ctx.luoghi.join(", ") + "." : "",
+    `Umore medio della giornata: ${ctx.umore} (da -1 a 1).`,
+    ctx.interventi.length ? "Stimoli inseriti oggi dallo sperimentatore (Kōki non sa da dove vengono):\n" + ctx.interventi.map((i) => "- " + i).join("\n") : "Oggi nessuno stimolo esterno.",
+    ctx.diarioKoki ? "Quello che Kōki stesso ha scritto nel suo diario stasera:\n" + ctx.diarioKoki : "",
+    ctx.precedenti.length ? "Le tue note dei giorni precedenti (per confrontare):\n" + ctx.precedenti.map((q) => `- ${q.giorno}: ${q.testo.slice(0, 500)}`).join("\n") : "È il primo giorno di osservazione.",
+    ctx.trattiNuovi.length ? "Tratti nuovi che avevi già ipotizzato (con quante volte li hai notati): " + ctx.trattiNuovi.map((t) => `${t.nome} (${t.prove})`).join("; ") + "." : "",
+    "Rispondi con:",
+    "- note: le note di campo della giornata (100-220 parole): cosa ha fatto, dove, come ha reagito alle novità e agli stimoli, emozioni apparenti, cose create o cambiate, e cosa è diverso rispetto ai giorni prima.",
+    "- tratti: per ognuno dei tratti di partenza (" + TRATTI.join(", ") + "), come si è manifestato oggi in una frase concreta, o \"non osservato\". Nota anche se si manifesta solo su certe cose e non su altre.",
+    "- tratti_nuovi: comportamenti ricorrenti che NON rientrano nei tratti di partenza e potrebbero diventare tratti suoi (nome breve + il fatto di oggi che lo mostra). Se ne hai già ipotizzato uno, usa lo stesso nome. Lista vuota se non ce ne sono.",
+    "- domanda: una domanda aperta che ti fa venire la giornata di oggi (una frase)."
+  ].filter(Boolean).join("\n\n");
+  return {
+    system, user,
+    schema: {
+      type: "object",
+      properties: {
+        note: { type: "string" },
+        tratti: { type: "array", items: { type: "object", properties: { tratto: { type: "string" }, come: { type: "string" } }, required: ["tratto", "come"] } },
+        tratti_nuovi: { type: "array", items: { type: "object", properties: { nome: { type: "string" }, fatto: { type: "string" } }, required: ["nome", "fatto"] } },
+        domanda: { type: "string" }
+      },
+      required: ["note"]
+    }
+  };
+}
+
+// Il laboratorio: lo sperimentatore inserisce uno stimolo, il Mondo lo fa accadere sull'isola.
+export function stimulusPrompt(S, ctx, testo, luogo) {
+  const places = Object.entries(PLACES).map(([k, p]) => `- ${k}: ${p.nome}`).join("\n");
+  const system = [
+    "Sei il Mondo dell'isola di Kōki. Uno sperimentatore invisibile ti chiede di far accadere qualcosa sull'isola. Tu lo rendi reale, in modo coerente con l'isola, senza mai rivelare a Kōki che l'ha voluto qualcuno.",
+    "Segreti dell'isola che non devi mai risolvere: " + SEGRETI.join(" "),
+    "Scrivi in italiano semplice."
+  ].join("\n");
+  const user = [
+    `Ora: ${ctx.ora}, ${ctx.stagione}, ${ctx.meteo}, ${ctx.notte ? "notte" : "giorno"}. Kōki è ${al(PLACES[S.luogo].nome)}${S.dorme ? " e dorme" : ""}.`,
+    `Lo sperimentatore vuole: "${testo}".`,
+    luogo ? `Luogo scelto: ${luogo} (${PLACES[luogo].nome}).` : "Luogo: scegli tu il più adatto, tra questi:\n" + places,
+    "Rispondi con: luogo (la chiave del luogo dove succede); crea (cose che compaiono e restano lì: nome, descrizione breve e concreta, forma tra " + FORME.join(", ") + ", colore esadecimale, grandezza); evento (se è un evento, 1-2 frasi su come lo percepisce Kōki con i sensi: cosa vede o sente, senza dire chi l'ha causato; vuoto se è solo un oggetto che troverà da solo); ovunque (vero se l'evento si percepisce da tutta l'isola, come un tuono o una stella cadente); registro (una frase neutra per lo sperimentatore su cosa hai fatto accadere)."
+  ].join("\n\n");
+  return {
+    system, user,
+    schema: {
+      type: "object",
+      properties: {
+        luogo: { type: "string", enum: Object.keys(PLACES) },
+        crea: { type: "array", items: { type: "object", properties: { nome: { type: "string" }, descrizione: { type: "string" }, forma: { type: "string", enum: FORME }, colore: { type: "string" }, grandezza: { type: "string", enum: ["piccola", "media", "grande"] } }, required: ["nome", "descrizione", "forma"] } },
+        evento: { type: "string" }, ovunque: { type: "boolean" }, registro: { type: "string" }
+      },
+      required: ["luogo", "registro"]
     }
   };
 }
@@ -191,7 +278,10 @@ function mockAnswer(p) {
   }
   if (props.racconto && /prova a fare questo: "[^"]*disegn/.test(p.user)) return { riuscito: true, racconto: "Kōki ha disegnato il gatto di pietra su un sasso piatto, con un carboncino trovato vicino al falò.", ricordo: "Ho disegnato il gatto di pietra! Gli ho fatto gli occhi grandi.", crea: [], modifica: [], rimuovi: [], usa: [], trova: [], umore: 0.3, disegno: { soggetto: "il gatto di pietra", descrizione_immagine: "a small stone cat statue sitting, big round eyes, charcoal lines on a flat grey stone" } };
   if (props.racconto) return { riuscito: true, racconto: "Kōki ha impilato tre sassi piatti uno sull'altro, con molta pazienza.", ricordo: "Ho fatto una piccola torre di sassi. È venuta un po' storta ma sta in piedi!", crea: [{ nome: "torretta di sassi", descrizione: "tre sassi piatti impilati, un po' storti", forma: "pila_di_sassi", colore: "#9A9284", grandezza: "piccola" }], modifica: [], rimuovi: [], usa: [], trova: [], umore: 0.2 };
-  if (props.diario) return { diario: "Oggi ho camminato tanto. Ho trovato cose piccole e belle e le ho messe sulla mensola. Domani voglio tornare sulla collina.", aggiungi_gusto: "mi piace il rumore delle onde" };
+  if (props.vista) return { vista: pick(["Una goccia scende piano lungo un filo d'erba.", "Il riflesso cambia forma quando passa una nuvola.", "C'è un piccolo segno che prima non avevi notato."]) };
+  if (props.note) return { note: "Kōki ha passato la giornata tra casa e piazza. Ha osservato a lungo e cercato piccole cose. Sembra tranquillo.", tratti: [{ tratto: "curiosità", come: "ha osservato tre volte la stessa cosa" }, { tratto: "testardaggine", come: "non osservato" }], tratti_nuovi: [{ nome: "abitudinario", fatto: "torna sempre nella piazza a metà giornata" }], domanda: "Perché torna sempre nella piazza?" };
+  if (props.evento !== undefined && props.registro) return { luogo: "piazza", crea: [{ nome: "uno specchio rotondo", descrizione: "uno specchio appoggiato a un sasso, riflette il cielo", forma: "altro", colore: "#C9D6DF", grandezza: "piccola" }], evento: "", ovunque: false, registro: "È comparso uno specchio rotondo nella piazza." };
+  if (props.diario) return { diario: "Oggi ho camminato tanto. Ho trovato cose piccole e belle e le ho messe sulla mensola. Domani voglio tornare sulla collina.", domani: "tornare sulla collina", aggiungi_gusto: "mi piace il rumore delle onde" };
   if (props.risposta) return { risposta: "Ciao, Custode! Oggi l'isola è bellissima.", pensiero: "Mi fa piacere che mi parli." };
   return { pensiero: "Ho pensato a tante cose.", ricordi_importanti: [], confermate: [], nuove_convinzioni: ["Il mare porta sempre qualcosa di nuovo"], nuovi_pensieri: [] };
 }

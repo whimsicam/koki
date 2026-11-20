@@ -93,11 +93,10 @@ export const TELESCOPE_PARTS = { lente: "spiaggia", vite: "bosco", manovella: "m
 // Il catalogo delle azioni: è tutto ciò che Kōki può fare. Il cervello sceglie solo da qui.
 export const ACTIONS = {
   vai: "vai <luogo>: cammini fino a un altro luogo dell'isola",
-  osserva: "osserva <cosa>: guardi con attenzione qualcosa che c'è dove sei (o il cielo)",
+  osserva: "osserva <cosa>: guardi con attenzione qualcosa che c'è dove sei: una cosa, un dettaglio, l'acqua, gli alberi, il cielo, le stelle...",
   cerca: "cerca: frughi intorno a te per trovare piccole cose da collezionare",
   riposa: "riposa: ti siedi e riprendi un po' di energia",
   dormi: "dormi: vai a dormire (meglio a casa, quando è sera o sei stanco)",
-  guarda_stelle: "guarda_stelle: di notte, guardi il cielo stellato (serve coraggio, c'è buio)",
   aggiusta_telescopio: "aggiusta_telescopio: sulla collina, provi a montare i pezzi che hai trovato",
   leggi_bottiglia: "leggi_bottiglia: se c'è una bottiglia dove sei, la apri e leggi il messaggio",
   sistema_collezione: "sistema_collezione: a casa, metti in ordine le cose che hai trovato",
