@@ -1,0 +1,36 @@
+# Kōki: il cervello (Worker + Durable Object) e la pagina 3D (cartella public).
+name = "koki"
+main = "../src/index.js"
+compatibility_date = "2025-09-01"
+
+# La pagina 3D e i suoi file.
+[assets]
+directory = "../public"
+
+# Il cervello gratuito di Cloudflare.
+
+# La "casa" di Kōki: un Durable Object con database SQLite.
+[[durable_objects.bindings]]
+name = "KOKI"
+class_name = "Koki"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Koki"]
+
+# Sveglia di riserva: se per qualche motivo il ciclo si ferma, lo riavvia.
+[triggers]
+crons = ["*/15 * * * *"]
+
+[vars]
+# Modello di Workers AI (deve supportare la modalità JSON).
+MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
+# Massimo di chiamate al modello al giorno (oltre, Kōki va "a inerzia" con le regole).
+MAX_AI_CALLS = "180"
+# Ogni quanti minuti Kōki vive un turno.
+TICK_MINUTES = "5"
+# Dove sta l'isola nel mondo reale: ora e meteo di Milano.
+TIMEZONE = "Europe/Rome"
+LAT = "45.46"
+LON = "9.19"
+# La password (PASSWORD) si imposta come "Secret" dalla dashboard di Cloudflare, non qui.

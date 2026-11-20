@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kōki">
+<meta name="theme-color" content="#2BA9BE">
+<title>Kōki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Caveat:wght@500;700&display=swap">
+<style>
+  :root { --ink:#1B2A2E; --paper:#FBFAF4; --line:rgba(27,42,46,.12); --muted:#5F6B6B; --accent:#2f7fb8; --sky1:#8ccbf2; --sky2:#e4f4ff; }
+  :root.dark { --ink:#ECEBE6; --paper:rgba(22,28,52,.86); --line:rgba(255,255,255,.12); --muted:#aab3c8; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; font:15px/1.45 Rubik, -apple-system, sans-serif; color:var(--ink); }
+  body { background:linear-gradient(180deg, var(--sky1), var(--sky2)); transition:background 1.2s; }
+  #stage { position:fixed; inset:0; touch-action:none; cursor:grab; }
+  #stage:active { cursor:grabbing; }
+  canvas { display:block; }
+  .glass { background:color-mix(in srgb, var(--paper) 78%, transparent); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border:1px solid var(--line); border-radius:16px; box-shadow:0 4px 18px rgba(20,40,50,.14); }
+  :root.dark .glass { background:rgba(18,24,48,.72); }
+  header { position:fixed; top:calc(env(safe-area-inset-top,0px) + 12px); left:max(12px, env(safe-area-inset-left,0px)); padding:8px 12px 9px; display:grid; gap:2px; max-width:min(330px, calc(100vw - 24px)); }
+  header h1 { margin:0; font-size:20px; letter-spacing:-.01em; display:flex; align-items:baseline; gap:8px; }
+  header h1 span { font-weight:400; opacity:.55; font-size:15px; }
+  header .meta { font-size:12px; color:var(--muted); }
+  header .doing { font-size:13.5px; }
+  header .doing b { font-weight:500; }
+  .views { position:fixed; top:calc(env(safe-area-inset-top,0px) + 12px); right:max(12px, env(safe-area-inset-right,0px)); padding:5px; display:flex; gap:4px; }
+  .views button, .dock button { border:0; background:transparent; color:var(--ink); font:500 12.5px Rubik, sans-serif; padding:6px 10px; border-radius:11px; cursor:pointer; }
+  .views button[aria-pressed="true"] { background:var(--ink); color:var(--paper); }
+  :root.dark .views button[aria-pressed="true"] { background:#ECEBE6; color:#141830; }
+  .dock { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom,0px) + 12px); padding:5px; display:flex; gap:2px; }
+  .dock button { display:grid; justify-items:center; gap:1px; padding:6px 12px; font-size:11.5px; }
+  .dock button i { font-style:normal; font-size:19px; line-height:1; }
+  #bubble { position:fixed; left:0; top:0; max-width:240px; padding:8px 11px; font-size:13.5px; line-height:1.35; pointer-events:none; transform:translate(-50%, -100%); transition:opacity .4s; }
+  #bubble::after { content:""; position:absolute; left:50%; bottom:-7px; width:12px; height:12px; background:inherit; border-right:1px solid var(--line); border-bottom:1px solid var(--line); transform:translateX(-50%) rotate(45deg); }
+  #bubble small { display:block; color:var(--muted); font-size:11px; margin-top:3px; }
+  .banner { position:fixed; left:50%; transform:translateX(-50%); top:calc(env(safe-area-inset-top,0px) + 64px); padding:6px 12px; font-size:12.5px; display:none; }
+  .walk { position:fixed; right:16px; bottom:calc(env(safe-area-inset-bottom,0px) + 80px); display:none; gap:6px; grid-template-columns:repeat(3, 44px); }
+  .walk button { height:44px; border-radius:12px; font-size:18px; border:1px solid var(--line); background:var(--paper); color:var(--ink); }
+  /* finestre */
+  .sheet { position:fixed; inset:auto 0 0 0; margin:0 auto; max-width:560px; max-height:min(78vh, 720px); display:none; flex-direction:column; border-radius:20px 20px 0 0; padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 16px); z-index:5; }
+  .sheet.open { display:flex; }
+  .sheet h2 { margin:0 0 8px; font-size:18px; display:flex; justify-content:space-between; align-items:center; }
+  .sheet h2 button { border:0; background:transparent; font-size:22px; cursor:pointer; color:var(--ink); }
+  .sheet .body { overflow:auto; display:grid; gap:12px; padding-right:2px; }
+  .sheet h3 { margin:4px 0 2px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:500; }
+  .chips { display:flex; flex-wrap:wrap; gap:5px; }
+  .chip { font-size:12.5px; padding:3px 9px; border-radius:999px; border:1px solid var(--line); }
+  .muted { color:var(--muted); font-size:13px; }
+  .list { margin:0; padding-left:18px; display:grid; gap:4px; font-size:14px; }
+  .bars { display:grid; grid-template-columns:auto 1fr; gap:4px 10px; align-items:center; font-size:13px; }
+  .bar { height:7px; border-radius:6px; background:var(--line); overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--accent); border-radius:6px; }
+  textarea, input[type=text], input[type=password] { width:100%; font:15px Rubik, sans-serif; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:rgba(255,255,255,.7); color:#1B2A2E; }
+  textarea { min-height:110px; resize:vertical; }
+  .btn { font:500 14px Rubik, sans-serif; padding:9px 16px; border-radius:999px; border:0; background:var(--ink); color:var(--paper); cursor:pointer; justify-self:start; }
+  :root.dark .btn { background:#ECEBE6; color:#141830; }
+  .btn:disabled { opacity:.5; }
+  /* diario */
+  .book { background:#f6efdf; color:#3a2f22; border-radius:14px; padding:14px 18px; font:20px/1.35 Caveat, cursive; box-shadow:inset 0 0 0 1px rgba(90,70,40,.15); white-space:pre-wrap; min-height:180px; background-image:repeating-linear-gradient(transparent 0 26px, rgba(90,120,160,.18) 26px 27px); }
+  .book .day { font:600 13px Rubik, sans-serif; color:#8a6f4a; margin-bottom:6px; display:block; }
+  .pager { display:flex; justify-content:space-between; align-items:center; font-size:13px; }
+  .pager button { border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:999px; padding:5px 12px; cursor:pointer; }
+  .chat { display:grid; gap:8px; }
+  .msg { padding:8px 11px; border-radius:14px; max-width:85%; font-size:14px; }
+  .msg.me { justify-self:end; background:var(--ink); color:var(--paper); }
+  :root.dark .msg.me { background:#ECEBE6; color:#141830; }
+  .msg.him { justify-self:start; background:rgba(127,180,220,.25); }
+  .msg.him em { display:block; font-size:12px; color:var(--muted); margin-top:3px; }
+  .feed { display:grid; gap:5px; font-size:13px; }
+  .feed div { display:grid; grid-template-columns:44px 1fr; gap:6px; }
+  .feed time { color:var(--muted); font-variant-numeric:tabular-nums; }
+  @media (max-width: 560px) {
+    .views { top:auto; bottom:calc(env(safe-area-inset-bottom,0px) + 72px); right:50%; transform:translateX(50%); }
+    .views button { padding:6px 8px; font-size:12px; }
+    header { max-width:calc(100vw - 24px); }
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<header class="glass">
+  <h1>Kōki <span>好奇</span></h1>
+  <div class="doing" id="doing">…</div>
+  <div class="meta" id="meta"></div>
+</header>
+<nav class="views glass" id="views" aria-label="Vista">
+  <button data-v="alto" aria-pressed="true">Dall'alto</button>
+  <button data-v="fianco" aria-pressed="false">Vicino</button>
+  <button data-v="occhi" aria-pressed="false">Occhi suoi</button>
+  <button data-v="libera" aria-pressed="false">Libera</button>
+</nav>
+<div id="bubble" class="glass" style="opacity:0"></div>
+<div class="banner glass" id="banner"></div>
+<div class="walk" id="walk"><span></span><button data-k="w">▲</button><span></span><button data-k="a">◀</button><button data-k="s">▼</button><button data-k="d">▶</button></div>
+<nav class="dock glass" aria-label="Azioni">
+  <button data-open="diario"><i>📖</i>Diario</button>
+  <button data-open="mente"><i>🌱</i>Kōki</button>
+  <button data-open="bottiglia"><i>🍾</i>Bottiglia</button>
+  <button data-open="parla"><i>🏮</i>Parla</button>
+</nav>
+
+<section class="sheet glass" id="s-diario"><h2>Il diario di Kōki <button data-close>×</button></h2><div class="body">
+  <div class="pager"><button id="d-prev">← prima</button><span id="d-idx" class="muted"></span><button id="d-next">dopo →</button></div>
+  <div class="book" id="d-page"></div>
+</div></section>
+
+<section class="sheet glass" id="s-mente"><h2>Kōki <button data-close>×</button></h2><div class="body" id="m-body"></div></section>
+
+<section class="sheet glass" id="s-bottiglia"><h2>Un messaggio in bottiglia <button data-close>×</button></h2><div class="body">
+  <p class="muted" style="margin:0">Scrivi un biglietto e affidalo al mare. Arriverà sulla spiaggia tra un po'. Kōki non sa chi lo manda.</p>
+  <textarea id="b-text" maxlength="500" placeholder="Caro Kōki…"></textarea>
+  <button class="btn" id="b-send">Affida al mare</button>
+  <p class="muted" id="b-state" style="margin:0"></p>
+</div></section>
+
+<section class="sheet glass" id="s-parla"><h2>Parla con Kōki <button data-close>×</button></h2><div class="body">
+  <p class="muted" style="margin:0">Per lui sei "il Custode", una voce gentile che a volte gli parla.</p>
+  <div class="chat" id="c-log"></div>
+  <form id="c-form" style="display:grid; gap:8px"><input type="text" id="c-in" maxlength="400" placeholder="Scrivi qualcosa a Kōki…" autocomplete="off"><button class="btn" id="c-send">Invia</button></form>
+</div></section>
+
+<section class="sheet glass" id="s-pass"><h2>Password</h2><div class="body">
+  <p class="muted" style="margin:0">Il mondo di Kōki è privato. Inserisci la password che hai impostato su Cloudflare.</p>
+  <form id="p-form" style="display:grid; gap:8px"><input type="password" id="p-in" autocomplete="current-password"><button class="btn">Entra</button></form>
+</div></section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  // ================= dati =================
+  var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  var KEY = store.get("koki-key") || "";
+  var DEMO = false, STATE = null, OFFSET = 0, PLACES = null, CAT_SPOTS = [];
+
+  // copia locale dei luoghi, usata se il cervello non risponde (anteprima)
+  var LOCAL_PLACES = {
+    casa: { nome: "la casa", x: -5.5, z: -2.5 }, piazza: { nome: "la piazzetta", x: 0, z: 1 }, laghetto: { nome: "il laghetto", x: 4.5, z: -1.5 },
+    giardino: { nome: "il giardino dei fiori", x: -4, z: 4.5 }, bosco: { nome: "il bosco", x: -7, z: -7 }, collina: { nome: "la collina", x: 6, z: -7.5 },
+    spiaggia: { nome: "la spiaggia", x: 1.5, z: 8.5 }, molo: { nome: "il molo", x: 7.5, z: 6 }
+  };
+
+  function api(path, opt) {
+    opt = opt || {};
+    opt.headers = Object.assign({ "x-koki-key": KEY }, opt.headers || {});
+    return fetch(path, opt).then(function (r) {
+      if (r.status === 401) { openSheet("pass"); throw new Error("password"); }
+      var ct = r.headers.get("content-type") || "";
+      if (ct.indexOf("json") < 0) throw new Error("nessun cervello");
+      return r.json();
+    });
+  }
+
+  // ================= scena =================
+  var stageEl = document.getElementById("stage");
+  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  stageEl.appendChild(renderer.domElement);
+  var scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0xdcefff, 40, 110);
+  var camera = new THREE.PerspectiveCamera(42, 1, 0.05, 300);
+
+  function M(c, o) { var p = { color: c, flatShading: true, roughness: .88, metalness: 0 }; if (o) for (var k in o) p[k] = o[k]; return new THREE.MeshStandardMaterial(p); }
+  function mesh(g, m, cast) { var x = new THREE.Mesh(g, m); x.castShadow = cast !== false; x.receiveShadow = true; return x; }
+  function V2(a) { return a.map(function (p) { return new THREE.Vector2(p[0], p[1]); }); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  var seed = 7; function srnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+
+  var hemi = new THREE.HemisphereLight(0xf4f8ff, 0x8a9a7a, .7); scene.add(hemi);
+  var sun = new THREE.DirectionalLight(0xfff4e4, .75); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  var sc = sun.shadow.camera; sc.left = -16; sc.right = 16; sc.top = 16; sc.bottom = -16; sc.near = 1; sc.far = 80; sun.shadow.bias = -.0015; sun.shadow.normalBias = .03;
+  scene.add(sun); scene.add(sun.target);
+
+  // ---------- terreno ----------
+  var R = 12.2;
+  function hill(x, z, cx, cz, h, s) { var d = (x - cx) * (x - cx) + (z - cz) * (z - cz); return h * Math.exp(-d / (2 * s * s)); }
+  function terrainH(x, z) {
+    var r = Math.hypot(x, z);
+    var h = .18 + .12 * Math.sin(x * .55) * Math.cos(z * .5) + hill(x, z, 6, -7.5, 2.3, 2.1) + hill(x, z, -7, -7, .5, 2.5) - hill(x, z, 4.5, -1.5, .55, 1.25);
+    h -= hill(x, z, 1.5, 9.5, .25, 2.6);
+    if (r > R - 1.6) h -= (r - (R - 1.6)) * .55;
+    return h;
+  }
+  var lowGrass = new THREE.Color(0x6db55a), sand = new THREE.Color(0xe0c993), dirt = new THREE.Color(0xa07a52);
+  var terrainGeo = new THREE.PlaneGeometry(2 * R + 4, 2 * R + 4, 64, 64).toNonIndexed();
+  terrainGeo.rotateX(-Math.PI / 2);
+  (function () {
+    var p = terrainGeo.attributes.position;
+    for (var i = 0; i < p.count; i++) { var x = p.getX(i), z = p.getZ(i); p.setY(i, Math.hypot(x, z) > R + 1.5 ? -2.5 : terrainH(x, z)); }
+    terrainGeo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(p.count * 3), 3));
+    terrainGeo.computeVertexNormals();
+  })();
+  var terrainMat = M(0xffffff, { vertexColors: true });
+  var terrain = mesh(terrainGeo, terrainMat, false); scene.add(terrain);
+  function paintTerrain(grassHex) {
+    var g = new THREE.Color(grassHex), p = terrainGeo.attributes.position, col = terrainGeo.attributes.color, c = new THREE.Color();
+    for (var i = 0; i < p.count; i += 3) {
+      var x = (p.getX(i) + p.getX(i + 1) + p.getX(i + 2)) / 3, z = (p.getZ(i) + p.getZ(i + 1) + p.getZ(i + 2)) / 3, y = (p.getY(i) + p.getY(i + 1) + p.getY(i + 2)) / 3;
+      var r = Math.hypot(x, z), beach = Math.hypot(x - 1.5, z - 8.5) < 4.2 || r > R - 1.1;
+      if (y < -.6) c.copy(dirt); else if (beach) c.copy(sand); else c.copy(g).offsetHSL(0, 0, (((x * 7.3 + z * 3.1) % 1 + 1) % 1) * .035 + Math.min(0, y) * .2);
+      for (var k = 0; k < 3; k++) col.setXYZ(i + k, c.r, c.g, c.b);
+    }
+    col.needsUpdate = true;
+  }
+  var cliff = mesh(new THREE.CylinderGeometry(R + .2, R - 2.5, 3.2, 28), M(0x9a6b45), false); cliff.position.y = -2.3; scene.add(cliff);
+
+  // ---------- mare ----------
+  var seaGeo = new THREE.PlaneGeometry(240, 240, 48, 48); seaGeo.rotateX(-Math.PI / 2);
+  var seaBase = seaGeo.attributes.position.array.slice();
+  var seaMat = M(0x3fa2c9, { roughness: .45, transparent: true, opacity: .93 });
+  var sea = mesh(seaGeo, seaMat, false); sea.position.y = -.35; scene.add(sea);
+
+  // ---------- cielo: stelle, pioggia ----------
+  var starGeo = new THREE.BufferGeometry(), sp = [];
+  for (var i = 0; i < 700; i++) { var th = Math.random() * Math.PI * 2, ph = Math.random() * Math.PI * .45, rr = 120; sp.push(rr * Math.sin(ph) * Math.cos(th), rr * Math.cos(ph) + 5, rr * Math.sin(ph) * Math.sin(th)); }
+  starGeo.setAttribute("position", new THREE.Float32BufferAttribute(sp, 3));
+  var starMat = new THREE.PointsMaterial({ color: 0xffffff, size: .7, transparent: true, opacity: 0, fog: false, sizeAttenuation: true });
+  scene.add(new THREE.Points(starGeo, starMat));
+  var rainGeo = new THREE.BufferGeometry(), rp = [];
+  for (i = 0; i < 1400; i++) rp.push(rnd(-20, 20), rnd(0, 20), rnd(-20, 20));
+  rainGeo.setAttribute("position", new THREE.Float32BufferAttribute(rp, 3));
+  var rain = new THREE.Points(rainGeo, new THREE.PointsMaterial({ color: 0xcfe3f5, size: .08, transparent: true, opacity: .7 })); rain.visible = false; scene.add(rain);
+
+  // ---------- materiali condivisi ----------
+  var foliageMat = M(0x4f9f4b), foliageMat2 = M(0x5aa850), trunkMat = M(0x7a5236), woodMat = M(0x9b6b43), woodDark = M(0x6f4a2c), stoneMat = M(0xa8a39a), rockMat = M(0x9a9aa2);
+  var windowMat = M(0xffe0a0, { emissive: 0xffb050, emissiveIntensity: 0 });
+  function place(k) { return (PLACES || LOCAL_PLACES)[k]; }
+  function at(obj, x, z, dy) { obj.position.set(x, terrainH(x, z) + (dy || 0), z); return obj; }
+  var foliage = [];
+
+  function tree(x, z, s, kind) {
+    var t = new THREE.Group();
+    var tr = mesh(new THREE.CylinderGeometry(.09, .13, .7, 5), trunkMat); tr.position.y = .35; t.add(tr);
+    if (kind === 1) {
+      var b = mesh(new THREE.IcosahedronGeometry(.75, 0), foliageMat2); b.position.y = 1.15; b.scale.y = .9; t.add(b); foliage.push(b);
+    } else {
+      var c1 = mesh(new THREE.ConeGeometry(.7, 1.2, 6), foliageMat); c1.position.y = 1.1; t.add(c1);
+      var c2 = mesh(new THREE.ConeGeometry(.52, .95, 6), foliageMat); c2.position.y = 1.65; c2.rotation.y = .5; t.add(c2); foliage.push(c1, c2);
+    }
+    t.scale.setScalar(s); t.rotation.y = srnd() * 6; scene.add(at(t, x, z, -.05)); return t;
+  }
+
+  // casa di Kōki: casetta tonda col tetto a cono
+  var houseG = new THREE.Group();
+  (function () {
+    var body = mesh(new THREE.CylinderGeometry(1.15, 1.25, 1.5, 10), M(0xe8d9bd)); body.position.y = .75; houseG.add(body);
+    var roof = mesh(new THREE.ConeGeometry(1.6, 1.3, 10), M(0x6b9c62)); roof.position.y = 2.1; houseG.add(roof);
+    var door = mesh(new THREE.BoxGeometry(.55, .9, .1), woodMat); door.position.set(0, .45, 1.18); houseG.add(door);
+    var win = mesh(new THREE.CircleGeometry(.22, 8), windowMat); win.position.set(.75, 1.05, .93); win.rotation.y = .68; houseG.add(win);
+    var win2 = win.clone(); win2.position.set(-.75, 1.05, .93); win2.rotation.y = -.68; houseG.add(win2);
+    var chim = mesh(new THREE.CylinderGeometry(.13, .15, .55, 6), M(0xb07a5a)); chim.position.set(.55, 2.4, -.2); houseG.add(chim);
+  })();
+  var houseLight = new THREE.PointLight(0xffb36a, 0, 7, 2); houseLight.position.set(0, 1.2, 1.6); houseG.add(houseLight);
+
+  // ponticello sul laghetto
+  var lake = mesh(new THREE.CircleGeometry(1.85, 18), M(0x3d93c0, { roughness: .3, transparent: true, opacity: .9 }), false);
+  var bridge = new THREE.Group();
+  (function () {
+    for (var i = 0; i < 9; i++) { var a = (i / 8 - .5) * 2.2, y = Math.cos((i / 8 - .5) * Math.PI) * .45; var plank = mesh(new THREE.BoxGeometry(.36, .07, .9), woodMat); plank.position.set(a * 1.1, y, 0); plank.rotation.z = -Math.sin((i / 8 - .5) * Math.PI) * .45; bridge.add(plank); }
+    [-1, 1].forEach(function (s) { for (var i = 0; i < 5; i++) { var a = (i / 4 - .5) * 2.2, y = Math.cos((i / 4 - .5) * Math.PI) * .45; var post = mesh(new THREE.CylinderGeometry(.035, .035, .45, 5), woodDark); post.position.set(a * 1.1, y + .22, s * .42); bridge.add(post); } });
+  })();
+  var lilies = [];
+  function buildLake(p) {
+    lake.rotation.x = -Math.PI / 2; lake.position.set(p.x, .02, p.z); scene.add(lake);
+    bridge.position.set(p.x, .05, p.z); bridge.rotation.y = .5; scene.add(bridge);
+    for (var i = 0; i < 6; i++) { var a = srnd() * 6.28, r = .8 + srnd() * .7; var l = mesh(new THREE.CircleGeometry(.17, 7), M(0x4f9a48), false); l.rotation.x = -Math.PI / 2; l.position.set(p.x + Math.cos(a) * r, .04, p.z + Math.sin(a) * r); scene.add(l); lilies.push(l); }
+  }
+
+  // giardino con fiori e farfalle
+  var flowerColors = [0xff8fb1, 0xffd447, 0xb58cff, 0xffffff, 0xff7a59, 0x8fd3ff];
+  var butterflies = [];
+  function buildGarden(p) {
+    var stemG = new THREE.CylinderGeometry(.012, .012, .3, 4), headG = new THREE.IcosahedronGeometry(.07, 0), stemM = M(0x4a9a40);
+    for (var i = 0; i < 70; i++) {
+      var a = srnd() * 6.28, r = Math.sqrt(srnd()) * 2.3, x = p.x + Math.cos(a) * r, z = p.z + Math.sin(a) * r;
+      var f = new THREE.Group(); var st = mesh(stemG, stemM, false); st.position.y = .15; f.add(st);
+      var hd = mesh(headG, M(flowerColors[i % flowerColors.length]), false); hd.position.y = .32; f.add(hd);
+      scene.add(at(f, x, z));
+    }
+    var fence = M(0xd9c7a0);
+    for (i = 0; i < 18; i++) { var a2 = i / 18 * 6.28; var post = mesh(new THREE.BoxGeometry(.07, .4, .07), fence); scene.add(at(post, p.x + Math.cos(a2) * 2.7, p.z + Math.sin(a2) * 2.7, .2)); }
+    for (i = 0; i < 6; i++) {
+      var bf = new THREE.Group(), wm = new THREE.MeshStandardMaterial({ color: flowerColors[i % 6], side: THREE.DoubleSide, roughness: .6 });
+      var w1 = new THREE.Mesh(new THREE.PlaneGeometry(.14, .11), wm); w1.position.x = .07; var w2 = w1.clone(); w2.position.x = -.07;
+      var p1 = new THREE.Group(); p1.add(w1); var p2 = new THREE.Group(); p2.add(w2); bf.add(p1); bf.add(p2);
+      bf.userData = { p1: p1, p2: p2, cx: p.x, cz: p.z, ph: srnd() * 6, sp: .3 + srnd() * .4, r: .6 + srnd() * 1.6 };
+      scene.add(bf); butterflies.push(bf);
+    }
+  }
+
+  // telescopio sulla collina
+  var telescope = new THREE.Group(), tube = new THREE.Group();
+  (function () {
+    var legM = M(0x6f6f78);
+    [0, 2.1, 4.2].forEach(function (a) { var l = mesh(new THREE.CylinderGeometry(.03, .03, 1.1, 5), legM); l.position.set(Math.cos(a) * .25, .5, Math.sin(a) * .25); l.rotation.set(Math.sin(a) * .25, 0, -Math.cos(a) * .25); telescope.add(l); });
+    var t = mesh(new THREE.CylinderGeometry(.09, .13, 1.1, 10), M(0xb08a3a, { metalness: .4, roughness: .45 })); t.rotation.z = Math.PI / 2; tube.add(t);
+    var ring = mesh(new THREE.TorusGeometry(.13, .025, 4, 10), M(0x6b4f1d)); ring.rotation.y = Math.PI / 2; ring.position.x = .55; tube.add(ring);
+    tube.position.y = 1.05; telescope.add(tube);
+  })();
+  var lens = mesh(new THREE.CircleGeometry(.1, 10), M(0xbfe6ff, { emissive: 0x6fb8ff, emissiveIntensity: .3, roughness: .1 }), false); lens.position.set(.56, 0, 0); lens.rotation.y = Math.PI / 2; tube.add(lens);
+  var crank = mesh(new THREE.BoxGeometry(.04, .2, .04), M(0x6b4f1d)); crank.position.set(0, -.15, .13); tube.add(crank);
+
+  // molo
+  var pier = new THREE.Group();
+  (function () {
+    for (var i = 0; i < 12; i++) { var pl = mesh(new THREE.BoxGeometry(1.3, .08, .34), woodMat); pl.position.set(0, 0, i * .36); pier.add(pl); }
+    for (i = 0; i < 4; i++) [-1, 1].forEach(function (s) { var po = mesh(new THREE.CylinderGeometry(.07, .07, 1.4, 6), woodDark); po.position.set(s * .6, -.5, i * 1.3); pier.add(po); });
+  })();
+
+  // piazzetta
+  var plaza = mesh(new THREE.CylinderGeometry(1.7, 1.75, .1, 12), stoneMat, false);
+
+  // impronte e bottiglia sulla spiaggia
+  var prints = new THREE.Group(), bottle = new THREE.Group();
+  (function () {
+    var pm = M(0xcdb784);
+    for (var i = 0; i < 9; i++) { var d = mesh(new THREE.CircleGeometry(.13, 7), pm, false); d.rotation.x = -Math.PI / 2; d.position.set((i % 2 ? .22 : -.22), .02, -i * .55); prints.add(d); }
+    var b = mesh(new THREE.CylinderGeometry(.07, .08, .32, 8), M(0x6fae8e, { transparent: true, opacity: .8, roughness: .2 })); b.rotation.z = Math.PI / 2; bottle.add(b);
+    var neck = mesh(new THREE.CylinderGeometry(.03, .04, .12, 6), M(0x6fae8e, { transparent: true, opacity: .8 })); neck.rotation.z = Math.PI / 2; neck.position.x = .22; bottle.add(neck);
+    var cork = mesh(new THREE.CylinderGeometry(.03, .03, .05, 6), M(0xb58b5a)); cork.rotation.z = Math.PI / 2; cork.position.x = .3; bottle.add(cork);
+    var note = mesh(new THREE.BoxGeometry(.18, .04, .07), M(0xf6efdf)); bottle.add(note);
+  })();
+
+  // il gatto di pietra
+  var cat = new THREE.Group();
+  (function () {
+    var m = M(0x9d9a92);
+    var body = mesh(new THREE.SphereGeometry(.22, 8, 6), m); body.scale.set(.85, 1.05, 1); body.position.y = .22; cat.add(body);
+    var head = mesh(new THREE.SphereGeometry(.15, 8, 6), m); head.position.set(0, .5, .06); cat.add(head);
+    [-1, 1].forEach(function (s) { var e = mesh(new THREE.ConeGeometry(.055, .12, 4), m); e.position.set(s * .08, .64, .05); e.rotation.z = -s * .2; cat.add(e); });
+    var tail = mesh(new THREE.TorusGeometry(.17, .035, 4, 10, Math.PI * 1.2), m); tail.rotation.x = Math.PI / 2; tail.position.set(0, .05, -.05); cat.add(tail);
+    var base = mesh(new THREE.CylinderGeometry(.25, .28, .08, 8), M(0x7f7c75)); base.position.y = .02; cat.add(base);
+  })();
+  scene.add(cat);
+  var catPos = new THREE.Vector3(), catTarget = null;
+
+  function buildWorld() {
+    seed = 11;
+    var P = PLACES || LOCAL_PLACES;
+    var h = P.casa; houseG.rotation.y = Math.atan2(-h.x, -h.z) * 0 + .4; scene.add(at(houseG, h.x - .6, h.z - 1.2, -.05));
+    buildLake(P.laghetto);
+    buildGarden(P.giardino);
+    var c = P.collina; telescope.rotation.y = -.6; scene.add(at(telescope, c.x + .4, c.z - .4));
+    var m = P.molo; pier.position.set(m.x + 1.2, -.05, m.z + .6); pier.rotation.y = Math.atan2(m.x, m.z) - Math.PI; pier.rotation.y = .9; scene.add(pier);
+    scene.add(at(plaza, P.piazza.x, P.piazza.z, -.03));
+    var s = P.spiaggia; scene.add(at(prints, s.x + 1.2, s.z - .6, .02)); prints.rotation.y = Math.PI; prints.position.y = terrainH(s.x + 1.2, s.z - .6) + .02;
+    scene.add(bottle);
+    // bosco fitto
+    for (var i = 0; i < 18; i++) { var a = srnd() * 6.28, r = .6 + Math.sqrt(srnd()) * 2.8; tree(P.bosco.x + Math.cos(a) * r, P.bosco.z + Math.sin(a) * r, .9 + srnd() * .6, srnd() < .3 ? 1 : 0); }
+    // alberi sparsi lontano dai luoghi
+    var n = 0;
+    while (n < 26) {
+      var x = rnd(-R + 2, R - 2), z = rnd(-R + 2, R - 2), ok = Math.hypot(x, z) < R - 2.2;
+      for (var k in P) if (Math.hypot(x - P[k].x, z - P[k].z) < 2.6) ok = false;
+      if (Math.hypot(x - 1.5, z - 8.5) < 4.5) ok = false;
+      if (ok) { tree(x, z, .7 + srnd() * .6, srnd() < .45 ? 1 : 0); n++; }
+    }
+    for (i = 0; i < 10; i++) { var rx = rnd(-R + 2, R - 2), rz = rnd(-R + 2, R - 2); if (Math.hypot(rx, rz) > R - 1.5) continue; var rk = mesh(new THREE.DodecahedronGeometry(rnd(.15, .35), 0), rockMat); rk.rotation.set(srnd(), srnd(), 0); scene.add(at(rk, rx, rz, .05)); }
+  }
+
+  // ================= Kōki =================
+  var KOKI_COLOR = 0xc8e0f2;
+  var K = (function () {
+    var bodyMat = M(KOKI_COLOR, { flatShading: false, roughness: .9 }), ink = M(0x121214, { flatShading: false, roughness: .2 });
+    function lathe(pts, n) { return new THREE.LatheGeometry(V2(pts), n || 36); }
+    function sph(r) { return new THREE.SphereGeometry(r, 24, 16); }
+    function superGeo(n, rx, ry, rz, taper) {
+      var g = new THREE.SphereGeometry(1, 64, 48), p = g.attributes.position;
+      for (var i = 0; i < p.count; i++) {
+        var x = p.getX(i), y = p.getY(i), z = p.getZ(i), k = Math.pow(Math.pow(Math.abs(x), n) + Math.pow(Math.abs(y), n) + Math.pow(Math.abs(z), n), 1 / n);
+        x /= k; y /= k; z /= k; var tp = 1 - (taper || 0) * Math.max(0, -y); p.setXYZ(i, x * rx * tp, y * ry, z * rz * tp);
+      }
+      g.computeVertexNormals(); return g;
+    }
+    var root = new THREE.Group(), inner = new THREE.Group(); root.add(inner); inner.scale.setScalar(.72);
+    var bodyG = new THREE.Group(); inner.add(bodyG);
+    var torso = mesh(lathe([[0, .19], [.17, .195], [.27, .221], [.315, .263], [.33, .325], [.318, .403], [.29, .476], [.25, .538], [.2, .585], [.12, .611], [0, .621]]), bodyMat); torso.scale.z = .8; bodyG.add(torso);
+    var head = new THREE.Group(); head.position.set(0, 1.06, .02); bodyG.add(head);
+    var RX = .63, RY = .52, RZ = .55, N = 2.7;
+    head.add(mesh(superGeo(N, RX, RY, RZ, .08), bodyMat));
+    function onHead(x, y) {
+      var tp = 1 - .08 * Math.max(0, -y / RY), u = Math.abs(x) / (RX * tp), v = Math.abs(y) / RY;
+      var z = RZ * tp * Math.pow(Math.max(0, 1 - Math.pow(u, N) - Math.pow(v, N)), 1 / N), w = z / (RZ * tp);
+      var n = new THREE.Vector3(Math.sign(x) * Math.pow(u, N - 1) / (RX * tp), Math.sign(y) * Math.pow(v, N - 1) / RY, Math.pow(w, N - 1) / (RZ * tp)).normalize();
+      return { p: new THREE.Vector3(x, y, z).addScaledVector(n, -.006), q: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), n) };
+    }
+    var eyes = [];
+    [-1, 1].forEach(function (s) { var o = onHead(s * .335, -.19), g = new THREE.Group(); g.position.copy(o.p); g.quaternion.copy(o.q); var d = mesh(sph(.036), ink, false); d.scale.z = .8; g.add(d); head.add(g); eyes.push(g); });
+    function arm(s) {
+      var sh = new THREE.Group(); sh.position.set(s * .36, .5, 0); bodyG.add(sh);
+      sh.add(mesh(lathe([[0, .06], [.05, .05], [.072, .025], [.078, -.03], [.082, -.15], [.077, -.2], [.06, -.24], [.03, -.262], [0, -.266]], 24), bodyMat));
+      var hand = new THREE.Group(); hand.position.y = -.23; sh.add(hand); return { sh: sh, hand: hand };
+    }
+    var armL = arm(1), armR = arm(-1);
+    function leg(s) { var p = new THREE.Group(); p.position.set(s * .135, .26, 0); inner.add(p); p.add(mesh(lathe([[0, .08], [.1, .07], [.118, .02], [.12, -.12], [.112, -.2], [.09, -.245], [.05, -.258], [0, -.26]]), bodyMat)); return p; }
+    var legL = leg(1), legR = leg(-1);
+    // germoglio
+    var leafMat = M(0x5cbf4f, { side: THREE.DoubleSide, flatShading: false }), stemMat = M(0x5aa845, { flatShading: false });
+    var sprout = new THREE.Group(); sprout.position.set(0, RY - .02, -.02); head.add(sprout);
+    var stem = mesh(new THREE.CylinderGeometry(.015, .022, .36, 8), stemMat); stem.position.y = .18; sprout.add(stem);
+    var leaves = [-1, 1].map(function (s) { var piv = new THREE.Group(); piv.position.set(0, .35, 0); var l = mesh(new THREE.SphereGeometry(.1, 16, 8), leafMat); l.scale.set(1, .2, .48); l.position.x = s * .085; piv.add(l); piv.rotation.z = s * .35; piv.userData.s = s; sprout.add(piv); return piv; });
+    var flower = new THREE.Group(); flower.position.y = .39; sprout.add(flower);
+    for (var i = 0; i < 5; i++) { var pt = mesh(sph(.03), M(0xff9ec4), false), a = i / 5 * Math.PI * 2; pt.position.set(Math.cos(a) * .035, .015, Math.sin(a) * .035); flower.add(pt); }
+    var fc = mesh(sph(.022), M(0xffd447), false); fc.position.y = .03; flower.add(fc);
+    var bud = mesh(sph(.03), M(0x6fae5a), false); bud.position.y = .37; sprout.add(bud);
+    // lanterna
+    var stickG = new THREE.Group(); armL.hand.add(stickG);
+    var stick = mesh(new THREE.CylinderGeometry(.018, .022, .95, 8), M(0x8a5a35)); stick.position.y = .33; stickG.add(stick);
+    var lanternPivot = new THREE.Group(); lanternPivot.position.set(0, .79, 0); stickG.add(lanternPivot);
+    var str = mesh(new THREE.CylinderGeometry(.005, .005, .13, 4), M(0x3a2a20), false); str.position.y = -.065; lanternPivot.add(str);
+    var lantern = new THREE.Group(); lantern.position.y = -.26; lanternPivot.add(lantern);
+    var paperMat = M(0xf7e3bd, { emissive: 0xffa040, emissiveIntensity: .15, roughness: .7, flatShading: false });
+    var paper = mesh(new THREE.SphereGeometry(.12, 24, 16), paperMat); paper.scale.y = 1.2; lantern.add(paper);
+    [.145, -.145].forEach(function (y) { var c = mesh(new THREE.CylinderGeometry(.055, .06, .03, 16), M(0x7a2e22)); c.position.y = y; lantern.add(c); });
+    var lanternLight = new THREE.PointLight(0xffb357, 0, 4, 2); lantern.add(lanternLight);
+    // quaderno per disegnare, bottiglia in mano
+    var pad = mesh(new THREE.BoxGeometry(.22, .02, .16), M(0xfdfaf2)); pad.position.set(0, -.05, .1); armR.hand.add(pad); pad.visible = false;
+    scene.add(root);
+    return { root: root, inner: inner, bodyG: bodyG, torso: torso, head: head, eyes: eyes, armL: armL, armR: armR, legL: legL, legR: legR, sprout: sprout, leaves: leaves, flower: flower, bud: bud, leafMat: leafMat,
+             stickG: stickG, lanternPivot: lanternPivot, paperMat: paperMat, lanternLight: lanternLight, pad: pad };
+  })();
+
+  // ================= stato → mondo =================
+  var SEASON = {
+    primavera: { grass: 0x6aa850, fol: 0x74b85e, fol2: 0x8cc96a, leaf: 0x7ed46a, flower: true, leaves: true, droop: 0 },
+    estate: { grass: 0x579a47, fol: 0x468f43, fol2: 0x55a24a, leaf: 0x55b947, flower: false, leaves: true, droop: 0 },
+    autunno: { grass: 0x86984c, fol: 0xcf7a2c, fol2: 0x6f9a4a, leaf: 0xe08a2e, flower: false, leaves: true, droop: .55 },
+    inverno: { grass: 0xdfe7ec, fol: 0x5f8f6a, fol2: 0xe3ecf1, leaf: 0x7ed46a, flower: false, leaves: false, droop: 0 }
+  };
+  var curSeason = null;
+  function applySeason(s) {
+    if (s === curSeason) return; curSeason = s; var c = SEASON[s] || SEASON.estate;
+    paintTerrain(c.grass); foliageMat.color.setHex(c.fol); foliageMat2.color.setHex(c.fol2); K.leafMat.color.setHex(c.leaf);
+    K.flower.visible = c.flower; K.bud.visible = !c.leaves;
+    K.leaves.forEach(function (l) { l.visible = c.leaves; l.rotation.z = l.userData.s * (.35 + c.droop); });
+  }
+  var light = { night: 0, rain: false };
+  function applyTime(T) {
+    var night = T.notte ? 1 : 0;
+    var h = T.ora24, dusk = (h > 17 && h < 19.5) || (h > 6 && h < 8);
+    var sky = night ? ["#0b1533", "#25335e"] : dusk ? ["#e9826a", "#ffd9a8"] : T.pioggia ? ["#8a9aa8", "#c9d3db"] : ["#8ccbf2", "#e4f4ff"];
+    var r = document.documentElement; r.style.setProperty("--sky1", sky[0]); r.style.setProperty("--sky2", sky[1]); r.classList.toggle("dark", !!night);
+    scene.fog.color.set(sky[1]);
+    light.night = night; light.rain = !!T.pioggia;
+    sun.color.setHex(night ? 0x9fb4ff : dusk ? 0xffa86b : 0xfff4e4);
+    sun.intensity = night ? .35 : T.pioggia ? .35 : dusk ? .7 : .78;
+    hemi.intensity = night ? .45 : T.pioggia ? .6 : .7; hemi.color.setHex(night ? 0x5a6aa8 : 0xf4f8ff);
+    var ang = ((h - 6) / 12) * Math.PI; sun.position.set(Math.cos(ang) * 25, 8 + Math.max(0, Math.sin(ang)) * 18, 10);
+    seaMat.color.setHex(night ? 0x1d3a63 : T.pioggia ? 0x4f7f97 : 0x3fa2c9);
+    starMat.opacity = night ? (T.nuvole > 70 ? .15 : .9) : 0;
+    rain.visible = !!T.pioggia;
+    windowMat.emissiveIntensity = night || dusk ? 1.2 : 0; houseLight.intensity = night ? 1.3 : dusk ? .6 : 0;
+    applySeason(T.stagione);
+  }
+
+  // ================= posizione di Kōki =================
+  var kpos = new THREE.Vector3(), kHeading = 0, walking = false, actionName = "osserva", sleeping = false;
+  function spotFor(key, slot) {
+    var p = place(key); if (!p) return new THREE.Vector3();
+    var off = { casa: [1.0, 1.4], laghetto: [-2.3, .6], giardino: [0, 0], bosco: [1.6, 1.2], collina: [-.4, .5], spiaggia: [-.6, -.8], molo: [-.4, -.6], piazza: [.5, .4] }[key] || [0, 0];
+    var x = p.x + off[0] + (slot || 0), z = p.z + off[1];
+    return new THREE.Vector3(x, terrainH(x, z), z);
+  }
+  function koki(now) {
+    if (!STATE) return;
+    var k = STATE.koki, a = k.attivita;
+    sleeping = !!k.dorme; walking = false; actionName = a ? a.azione : "osserva";
+    if (a && a.azione === "vai") {
+      var f = Math.max(0, Math.min(1, (now - a.inizio) / Math.max(1, a.fine - a.inizio)));
+      var A = spotFor(a.da), B = spotFor(a.a);
+      var p = A.clone().lerp(B, f); p.y = terrainH(p.x, p.z);
+      walking = f < 1; kpos.copy(p);
+      if (walking) kHeading = Math.atan2(B.x - A.x, B.z - A.z);
+    } else {
+      var s = spotFor(k.luogo, 0);
+      if (actionName === "aggiusta_telescopio" || (actionName === "guarda_stelle" && k.luogo === "collina")) s = new THREE.Vector3(place("collina").x - .3, 0, place("collina").z + .2), s.y = terrainH(s.x, s.z);
+      if (actionName === "leggi_bottiglia") s = bottle.position.clone().add(new THREE.Vector3(-.5, 0, .3)), s.y = terrainH(s.x, s.z);
+      kpos.lerp(s, .08);
+      if (k.luogo === "spiaggia" || k.luogo === "molo") kHeading = lerpAngle(kHeading, Math.atan2(place(k.luogo).x * .2, 1), .05);
+      if (actionName === "cerca") { var t = now / 1000; kpos.x += Math.sin(t * .4) * .5; kpos.z += Math.cos(t * .33) * .4; kpos.y = terrainH(kpos.x, kpos.z); kHeading = Math.atan2(Math.cos(t * .4) * .5, -Math.sin(t * .33) * .4); }
+    }
+  }
+  function lerpAngle(a, b, k) { var d = Math.atan2(Math.sin(b - a), Math.cos(b - a)); return a + d * k; }
+
+  function applyWorldState() {
+    if (!STATE) return;
+    var W = STATE.mondo;
+    var c = W.gatto ? spotFor(W.gatto, 0) : null;
+    if (c) { c.x += .9; c.z -= .7; c.y = terrainH(c.x, c.z); catTarget = c; }
+    prints.visible = !!W.impronte;
+    var s = place("spiaggia"); bottle.visible = !!W.bottiglia; bottle.position.set(s.x - .2, terrainH(s.x - .2, s.z + .9) + .07, s.z + .9);
+    var tel = W.telescopio || { montati: [], aggiustato: false };
+    lens.visible = tel.montati.indexOf("lente") >= 0; crank.visible = tel.montati.indexOf("manovella") >= 0;
+    tube.rotation.z = tel.aggiustato ? .5 : -.25;
+  }
+
+  // ================= telecamere =================
+  var view = "alto", orbit = { th: .5, ph: .95, r: 30 }, side = { th: .6, ph: 1.2, r: 4.2 }, free = { x: 0, z: 4, yaw: Math.PI, pitch: -.05 };
+  var target = new THREE.Vector3(0, 1, 0), keys = {};
+  var pointers = {}, lastPinch = 0;
+  function cnt() { return Object.keys(pointers).length; }
+  stageEl.addEventListener("pointerdown", function (e) { pointers[e.pointerId] = { x: e.clientX, y: e.clientY }; stageEl.setPointerCapture(e.pointerId); lastPinch = 0; });
+  stageEl.addEventListener("pointermove", function (e) {
+    var p = pointers[e.pointerId]; if (!p) return;
+    var dx = e.clientX - p.x, dy = e.clientY - p.y;
+    if (cnt() === 2) {
+      p.x = e.clientX; p.y = e.clientY;
+      var ks = Object.keys(pointers), a = pointers[ks[0]], b = pointers[ks[1]], d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (lastPinch) zoom(lastPinch / d); lastPinch = d; return;
+    }
+    var o = view === "alto" ? orbit : side;
+    if (view === "libera" || view === "occhi") { free.yaw -= dx * .005; free.pitch = Math.max(-1.2, Math.min(1.2, free.pitch - dy * .004)); }
+    else { o.th -= dx * .007; o.ph = Math.max(.25, Math.min(1.5, o.ph - dy * .005)); }
+    p.x = e.clientX; p.y = e.clientY;
+  });
+  function up(e) { delete pointers[e.pointerId]; lastPinch = 0; }
+  stageEl.addEventListener("pointerup", up); stageEl.addEventListener("pointercancel", up);
+  function zoom(f) { if (view === "alto") orbit.r = Math.max(8, Math.min(55, orbit.r * f)); else if (view === "fianco") side.r = Math.max(2, Math.min(12, side.r * f)); }
+  stageEl.addEventListener("wheel", function (e) { e.preventDefault(); zoom(1 + e.deltaY * .001); }, { passive: false });
+  // tocco su Kōki dall'alto: scendi al suo fianco
+  var ray = new THREE.Raycaster(), downAt = null;
+  stageEl.addEventListener("pointerdown", function (e) { downAt = { x: e.clientX, y: e.clientY }; });
+  stageEl.addEventListener("pointerup", function (e) {
+    if (!downAt || Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 6 || view !== "alto") return;
+    var r = renderer.domElement.getBoundingClientRect();
+    ray.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), camera);
+    if (ray.intersectObject(K.root, true).length) setView("fianco");
+  });
+  window.addEventListener("keydown", function (e) { keys[e.key.toLowerCase()] = true; });
+  window.addEventListener("keyup", function (e) { keys[e.key.toLowerCase()] = false; });
+  document.querySelectorAll("#walk button").forEach(function (b) {
+    var k = b.dataset.k;
+    b.addEventListener("pointerdown", function () { keys[k] = true; }); b.addEventListener("pointerup", function () { keys[k] = false; }); b.addEventListener("pointerleave", function () { keys[k] = false; });
+  });
+  function setView(v) {
+    view = v;
+    document.querySelectorAll("#views button").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.v === v ? "true" : "false"); });
+    document.getElementById("walk").style.display = v === "libera" ? "grid" : "none";
+    if (v === "libera") { free.x = kpos.x + Math.sin(kHeading) * 3; free.z = kpos.z + Math.cos(kHeading) * 3; free.yaw = kHeading + Math.PI; free.pitch = -.1; }
+    if (v === "occhi") { free.yaw = kHeading; free.pitch = actionName === "guarda_stelle" ? .8 : 0; }
+    if (v === "fianco") side.th = kHeading + .7;
+    K.head.visible = v !== "occhi";
+  }
+  document.querySelectorAll("#views button").forEach(function (b) { b.addEventListener("click", function () { setView(b.dataset.v); }); });
+
+  function updateCamera(dt) {
+    var smooth = Math.min(1, dt * 4);
+    if (view === "alto") {
+      target.lerp(new THREE.Vector3(0, .5, 0), smooth * .5);
+      camera.position.set(target.x + orbit.r * Math.sin(orbit.ph) * Math.sin(orbit.th), target.y + orbit.r * Math.cos(orbit.ph), target.z + orbit.r * Math.sin(orbit.ph) * Math.cos(orbit.th));
+      camera.lookAt(target);
+    } else if (view === "fianco") {
+      target.lerp(new THREE.Vector3(kpos.x, kpos.y + .7, kpos.z), smooth);
+      var cp = new THREE.Vector3(target.x + side.r * Math.sin(side.ph) * Math.sin(side.th), target.y + side.r * Math.cos(side.ph), target.z + side.r * Math.sin(side.ph) * Math.cos(side.th));
+      cp.y = Math.max(cp.y, terrainH(cp.x, cp.z) + .3);
+      camera.position.copy(cp); camera.lookAt(target);
+    } else if (view === "occhi") {
+      var eye = new THREE.Vector3(kpos.x, kpos.y + .78, kpos.z);
+      if (walking) free.yaw = lerpAngle(free.yaw, kHeading, smooth * .5);
+      camera.position.copy(eye);
+      camera.lookAt(eye.x + Math.sin(free.yaw) * Math.cos(free.pitch), eye.y + Math.sin(free.pitch), eye.z + Math.cos(free.yaw) * Math.cos(free.pitch));
+    } else {
+      var sp = 3 * dt, fx = Math.sin(free.yaw), fz = Math.cos(free.yaw);
+      if (keys.w || keys.arrowup) { free.x += fx * sp; free.z += fz * sp; }
+      if (keys.s || keys.arrowdown) { free.x -= fx * sp; free.z -= fz * sp; }
+      if (keys.a || keys.arrowleft) free.yaw += dt * 1.6;
+      if (keys.d || keys.arrowright) free.yaw -= dt * 1.6;
+      var rr = Math.hypot(free.x, free.z); if (rr > R - 1) { free.x *= (R - 1) / rr; free.z *= (R - 1) / rr; }
+      var y = terrainH(free.x, free.z) + 1.0;
+      camera.position.set(free.x, y, free.z);
+      camera.lookAt(free.x + Math.sin(free.yaw) * Math.cos(free.pitch), y + Math.sin(free.pitch), free.z + Math.cos(free.yaw) * Math.cos(free.pitch));
+    }
+  }
+
+  function resize() { var w = stageEl.clientWidth, h = stageEl.clientHeight; renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+  window.addEventListener("resize", resize); resize();
+
+  // ================= animazione =================
+  var clock = new THREE.Clock(), qa = new THREE.Quaternion(), qb = new THREE.Quaternion(), eS = new THREE.Euler();
+  var nextBlink = 2, blinkT = -1, lanI = .15, lanL = 0, bubbleEl = document.getElementById("bubble");
+  function loop() {
+    var dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime, now = Date.now() + OFFSET;
+    // mare
+    var arr = seaGeo.attributes.position.array;
+    for (var i = 0; i < arr.length; i += 3) { var x = seaBase[i], z = seaBase[i + 2]; arr[i + 1] = Math.sin(x * .3 + t * .8) * .09 + Math.cos(z * .28 + t * 1.1) * .09; }
+    seaGeo.attributes.position.needsUpdate = true; seaGeo.computeVertexNormals();
+    if (rain.visible) { var rpos = rainGeo.attributes.position.array; for (i = 1; i < rpos.length; i += 3) { rpos[i] -= dt * 14; if (rpos[i] < 0) rpos[i] = 20; } rainGeo.attributes.position.needsUpdate = true; rain.position.set(camera.position.x, 0, camera.position.z); }
+    butterflies.forEach(function (b) { var u = b.userData, a = t * u.sp + u.ph; b.position.set(u.cx + Math.cos(a) * u.r, terrainH(u.cx, u.cz) + .55 + Math.sin(t * 2 + u.ph) * .15, u.cz + Math.sin(a * 1.3) * u.r); b.rotation.y = -a; var f = Math.sin(t * 18 + u.ph) * .9; u.p1.rotation.z = f; u.p2.rotation.z = -f; b.visible = !light.night && !light.rain; });
+    lilies.forEach(function (l, i) { l.position.y = .04 + Math.sin(t + i) * .01; });
+    if (catTarget) { if (catPos.lengthSq() === 0) catPos.copy(catTarget); else if (catPos.distanceTo(catTarget) > .01) catPos.copy(catTarget); cat.position.copy(catPos); cat.rotation.y = Math.atan2(-catPos.x, -catPos.z) + Math.PI; }
+
+    // Kōki
+    koki(now);
+    K.root.position.copy(kpos);
+    K.root.visible = !sleeping || view === "occhi";
+    K.root.rotation.y = lerpAngle(K.root.rotation.y, kHeading, Math.min(1, dt * 5));
+    var step = walking ? Math.sin(t * 9) : 0, act = actionName;
+    var sit = !walking && (act === "disegna" || act === "riposa" || act === "guarda_stelle");
+    K.legL.rotation.x = sit ? -1.3 : step * .5; K.legR.rotation.x = sit ? -1.3 : -step * .5;
+    K.bodyG.position.y = (walking ? Math.abs(Math.sin(t * 9)) * .03 : 0) + (act === "gioca" && !walking ? Math.abs(Math.sin(t * 5)) * .12 : 0);
+    K.inner.position.y = sit ? -.17 : 0;
+    var br = walking ? 0 : Math.sin(t * 1.8) * .012; K.torso.scale.set(1 + br, 1 - br * .5, .8 * (1 + br));
+    var look = act === "guarda_stelle" || (act === "osserva" && STATE && /cielo|stell/i.test((STATE.koki.attivita || {}).oggetto || ""));
+    K.head.rotation.x = look ? -.5 : act === "cerca" ? .35 : act === "disegna" ? .25 : Math.sin(t * .6) * .03;
+    K.head.rotation.z = walking ? Math.sin(t * 9) * .035 : act === "osserva" ? Math.sin(t * .5) * .12 : Math.sin(t * .8) * .035;
+    K.head.rotation.y = act === "cerca" ? Math.sin(t * 1.3) * .5 : act === "osserva" ? Math.sin(t * .35) * .4 : 0;
+    var hold = 1, draw = act === "disegna" && !walking, wave = act === "gioca" && !walking ? 1 : 0, fix = act === "aggiusta_telescopio" && !walking;
+    K.armL.sh.rotation.set(walking ? -step * .2 : -.55, 0, .5 + Math.sin(t * 1.8) * .02);
+    K.armR.sh.rotation.set(draw ? -1.0 + Math.sin(t * 6) * .12 : fix ? -1.3 + Math.sin(t * 5) * .3 : walking ? step * .45 : 0, 0, -.45 - wave * 2.3 + wave * Math.sin(t * 9) * .3);
+    K.pad.visible = draw;
+    // lanterna sempre a piombo
+    K.stickG.rotation.set(-K.armL.sh.rotation.x + .55, 0, -K.armL.sh.rotation.z - .5);
+    K.stickG.updateMatrixWorld(true); K.stickG.getWorldQuaternion(qa); qa.invert();
+    qb.setFromEuler(eS.set(Math.cos(t * 1.3) * .06, 0, Math.sin(t * 1.6) * .12 + (walking ? Math.sin(t * 9) * .1 : 0)));
+    K.lanternPivot.quaternion.copy(qa).multiply(K.root.quaternion).multiply(qb);
+    var lt = light.night ? [2.2, 1.6] : [.15, 0];
+    lanI += (lt[0] - lanI) * Math.min(1, dt * 2); lanL += (lt[1] - lanL) * Math.min(1, dt * 2);
+    var fl = 1 + Math.sin(t * 13) * .04 + Math.sin(t * 7.3) * .03;
+    K.paperMat.emissiveIntensity = lanI * fl; K.lanternLight.intensity = K.root.visible ? lanL * fl : 0;
+    K.sprout.rotation.z = Math.sin(t * 2.1) * .07;
+    if (t > nextBlink && blinkT < 0) blinkT = 0;
+    var kb = 1; if (blinkT >= 0) { blinkT += dt; kb = blinkT < .07 ? 1 - blinkT / .07 * .9 : blinkT < .14 ? .1 + (blinkT - .07) / .07 * .9 : 1; if (blinkT >= .14) { blinkT = -1; nextBlink = t + 2.5 + Math.random() * 3.5; } }
+    K.eyes.forEach(function (e) { e.scale.y = kb; });
+
+    sun.target.position.copy(view === "alto" ? new THREE.Vector3() : kpos);
+    updateCamera(dt);
+    renderer.render(scene, camera);
+    placeBubble();
+    requestAnimationFrame(loop);
+  }
+
+  function placeBubble() {
+    if (!STATE || view === "occhi") { bubbleEl.style.opacity = 0; return; }
+    var anchor = sleeping ? new THREE.Vector3(houseG.position.x, houseG.position.y + 3.2, houseG.position.z) : new THREE.Vector3(kpos.x, kpos.y + 1.45, kpos.z);
+    var v = anchor.project(camera);
+    if (v.z > 1) { bubbleEl.style.opacity = 0; return; }
+    var r = renderer.domElement.getBoundingClientRect();
+    bubbleEl.style.left = (r.left + (v.x + 1) / 2 * r.width) + "px";
+    bubbleEl.style.top = (r.top + (1 - v.y) / 2 * r.height - 6) + "px";
+    bubbleEl.style.opacity = 1;
+  }
+
+  // ================= interfaccia =================
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function hhmm(t) { var d = new Date(t); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
+  function renderHud() {
+    if (!STATE) return;
+    var k = STATE.koki, T = STATE.tempo;
+    var luogo = (place(k.luogo) || {}).nome || k.luogo;
+    document.getElementById("doing").innerHTML = k.dorme ? "<b>Dorme</b> nella sua casetta 💤" : "<b>" + esc(k.descrizione.charAt(0).toUpperCase() + k.descrizione.slice(1)) + "</b>" + (k.attivita && k.attivita.azione !== "vai" ? " · " + esc(luogo) : "");
+    document.getElementById("meta").textContent = T.ora + " · " + T.meteo + " · " + T.stagione;
+    bubbleEl.innerHTML = k.dorme ? "💤 <small>sogna</small>" : esc(k.pensiero || "…") + (k.attivita && k.attivita.perche ? "<small>" + esc(k.attivita.perche) + "</small>" : "");
+    if (document.getElementById("s-mente").classList.contains("open")) renderMind();
+    var bs = document.getElementById("b-state");
+    bs.textContent = STATE.mondo.bottigliaInViaggio ? "C'è una bottiglia in viaggio sulle onde." : STATE.mondo.bottiglia ? "La bottiglia è arrivata sulla spiaggia: Kōki non l'ha ancora aperta." : "";
+    document.getElementById("b-send").disabled = !!(STATE.mondo.bottigliaInViaggio || STATE.mondo.bottiglia);
+  }
+
+  function bar(label, v) { return "<span>" + label + "</span><div class='bar'><i style='width:" + Math.round(Math.max(0, Math.min(1, v)) * 100) + "%'></i></div>"; }
+  function renderMind() {
+    var k = STATE.koki, b = k.corpo, el = document.getElementById("m-body");
+    var counts = {}; (k.inventario || []).forEach(function (c) { counts[c] = (counts[c] || 0) + 1; });
+    var inv = Object.keys(counts).map(function (c) { return "<span class='chip'>" + esc(c) + (counts[c] > 1 ? " ×" + counts[c] : "") + "</span>"; }).join("");
+    var days = Math.max(1, Math.floor((Date.now() - k.nato) / 86400000) + 1);
+    var tel = STATE.mondo.telescopio;
+    el.innerHTML =
+      "<div><h3>Come sta</h3><div class='bars'>" + bar("Energia", b.energia) + bar("Umore", (k.umore + 1) / 2) + bar("Voglia di scoprire", b.curiosita) + bar("Voglia di creare", b.espressione) + bar("Bisogno di compagnia", b.socialita) + bar("Paura", b.paura) + "</div></div>" +
+      "<div><h3>Cose che ha scoperto di sé</h3>" + ((k.scheda.gusti.length + k.scheda.abitudini.length) ? "<ul class='list'>" + k.scheda.gusti.map(function (g) { return "<li>" + esc(g) + "</li>"; }).join("") + k.scheda.abitudini.map(function (g) { return "<li>" + esc(g) + " <span class='muted'>(abitudine)</span></li>"; }).join("") + "</ul>" : "<p class='muted'>Ancora niente: è nato da " + days + (days === 1 ? " giorno" : " giorni") + ". Lo scoprirà vivendo.</p>") + "</div>" +
+      "<div><h3>Pensieri che si porta dietro</h3>" + (STATE.aperti.length ? "<ul class='list'>" + STATE.aperti.map(function (a) { return "<li><span class='muted'>" + esc(a.tipo) + ":</span> " + esc(a.testo) + "</li>"; }).join("") + "</ul>" : "<p class='muted'>Nessuno, per ora.</p>") + "</div>" +
+      "<div><h3>Di cosa è convinto</h3>" + (STATE.convinzioni.length ? "<ul class='list'>" + STATE.convinzioni.map(function (c) { return "<li>" + esc(c.testo) + "</li>"; }).join("") + "</ul>" : "<p class='muted'>Non si è ancora fatto un'idea delle cose.</p>") + "</div>" +
+      "<div><h3>La sua collezione</h3>" + (inv ? "<div class='chips'>" + inv + "</div>" : "<p class='muted'>Vuota. Prima o poi troverà qualcosa.</p>") + "</div>" +
+      "<div><h3>Disegni</h3>" + (STATE.opere.length ? "<ul class='list'>" + STATE.opere.slice(0, 12).map(function (o) { return "<li>" + esc(o.titolo) + " <span class='muted'>" + new Date(o.t).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) + "</span></li>"; }).join("") + "</ul>" : "<p class='muted'>Nessuno, per ora.</p>") + "</div>" +
+      "<div><h3>Il telescopio</h3><p class='muted' style='margin:0'>" + (tel.aggiustato ? "Aggiustato! 🔭" : "Montati: " + (tel.montati.join(", ") || "nessun pezzo") + ". Mancano: " + tel.mancanti.join(", ") + ".") + "</p></div>" +
+      "<div><h3>Cronaca</h3><div class='feed'>" + STATE.log.slice(0, 25).map(function (l) { return "<div><time>" + hhmm(l.t) + "</time><span>" + esc(l.testo) + "</span></div>"; }).join("") + "</div></div>" +
+      (DEMO ? "" : "<p class='muted' style='margin:0'>Cervello: " + STATE.cervello.chiamateOggi + " pensieri su " + STATE.cervello.massimo + " disponibili oggi.</p>");
+  }
+
+  var diary = [], dIdx = 0;
+  function renderDiary() {
+    var page = document.getElementById("d-page");
+    if (!diary.length) { page.innerHTML = "<span class='day'>Ancora nessuna pagina</span>Kōki scrive il diario la sera, quando va a dormire."; document.getElementById("d-idx").textContent = ""; return; }
+    var d = diary[dIdx];
+    var date = new Date(d.giorno + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
+    page.innerHTML = "<span class='day'>" + esc(date) + "</span>" + esc(d.testo);
+    document.getElementById("d-idx").textContent = (diary.length - dIdx) + " di " + diary.length;
+  }
+  document.getElementById("d-prev").onclick = function () { if (dIdx < diary.length - 1) { dIdx++; renderDiary(); } };
+  document.getElementById("d-next").onclick = function () { if (dIdx > 0) { dIdx--; renderDiary(); } };
+
+  function openSheet(id) {
+    document.querySelectorAll(".sheet").forEach(function (s) { s.classList.remove("open"); });
+    document.getElementById("s-" + id).classList.add("open");
+    if (id === "mente" && STATE) renderMind();
+    if (id === "diario") { if (DEMO) { diary = [{ giorno: new Date().toISOString().slice(0, 10), testo: "(Anteprima: il diario vero lo scrive Kōki quando il cervello è acceso.)" }]; dIdx = 0; renderDiary(); } else api("/api/diario").then(function (d) { diary = d; dIdx = 0; renderDiary(); }).catch(function () {}); }
+    if (id === "pass") setTimeout(function () { document.getElementById("p-in").focus(); }, 50);
+  }
+  document.querySelectorAll("[data-open]").forEach(function (b) { b.addEventListener("click", function () { var s = document.getElementById("s-" + b.dataset.open); if (s.classList.contains("open")) s.classList.remove("open"); else openSheet(b.dataset.open); }); });
+  document.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", function () { b.closest(".sheet").classList.remove("open"); }); });
+
+  document.getElementById("p-form").addEventListener("submit", function (e) { e.preventDefault(); KEY = document.getElementById("p-in").value; store.set("koki-key", KEY); document.getElementById("s-pass").classList.remove("open"); refresh(); });
+
+  document.getElementById("b-send").addEventListener("click", function () {
+    var t = document.getElementById("b-text").value.trim(); if (!t) return;
+    if (DEMO) { document.getElementById("b-state").textContent = "Nell'anteprima la bottiglia non parte: serve il cervello acceso."; return; }
+    api("/api/bottiglia", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ testo: t }) }).then(function (r) {
+      document.getElementById("b-state").textContent = r.ok ? "La bottiglia galleggia verso l'isola. Arriverà tra circa " + r.arrivoTra + " minuti." : (r.errore || "Non è partita.");
+      if (r.ok) document.getElementById("b-text").value = ""; refresh();
+    }).catch(function () {});
+  });
+
+  var chatLog = document.getElementById("c-log");
+  document.getElementById("c-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var inp = document.getElementById("c-in"), m = inp.value.trim(); if (!m) return;
+    chatLog.insertAdjacentHTML("beforeend", "<div class='msg me'>" + esc(m) + "</div>"); inp.value = "";
+    var wait = document.createElement("div"); wait.className = "msg him"; wait.textContent = "…"; chatLog.appendChild(wait);
+    var btn = document.getElementById("c-send"); btn.disabled = true;
+    var p = DEMO ? Promise.resolve({ risposta: "(Anteprima: Kōki ti risponderà quando il cervello è acceso.)" }) : api("/api/parla", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messaggio: m }) });
+    p.then(function (r) { wait.innerHTML = esc(r.risposta) + (r.pensiero ? "<em>pensa: " + esc(r.pensiero) + "</em>" : ""); refresh(); })
+     .catch(function () { wait.textContent = "(non risponde)"; }).then(function () { btn.disabled = false; chatLog.parentElement.scrollTop = 1e6; });
+  });
+
+  // ================= aggiornamento =================
+  var banner = document.getElementById("banner");
+  function refresh() {
+    return api("/api/stato").then(function (s) {
+      DEMO = false; banner.style.display = "none";
+      OFFSET = s.adesso - Date.now(); STATE = s; applyTime(s.tempo); applyWorldState(); renderHud();
+    }).catch(function (e) {
+      if (String(e.message) === "password") return;
+      if (!STATE || DEMO) startDemo();
+    });
+  }
+  function boot() {
+    fetch("/api/mondo").then(function (r) { return r.json(); }).then(function (m) { PLACES = m.luoghi; CAT_SPOTS = m.postiGatto; }).catch(function () {}).then(function () {
+      buildWorld();
+      var h = place("casa"); kpos.copy(spotFor("casa"));
+      refresh(); setInterval(refresh, 15000);
+      loop();
+    });
+  }
+
+  // ---------- anteprima senza cervello ----------
+  var demoTimer = null;
+  function startDemo() {
+    DEMO = true; banner.style.display = "block"; banner.textContent = "Anteprima: il cervello non è collegato, Kōki gira a caso.";
+    if (demoTimer) return;
+    var d = new Date(), h = d.getHours() + d.getMinutes() / 60, notte = h < 7 || h >= 18.5;
+    var keys = Object.keys(LOCAL_PLACES), here = "casa";
+    STATE = { adesso: Date.now(), tempo: { ora: d.toLocaleString("it-IT", { weekday: "long", hour: "2-digit", minute: "2-digit" }), ora24: h, notte: notte, meteo: "sereno", pioggia: false, nuvole: 20, stagione: ["inverno", "inverno", "primavera", "primavera", "primavera", "estate", "estate", "estate", "autunno", "autunno", "autunno", "inverno"][d.getMonth()] },
+      koki: { luogo: here, dorme: false, attivita: null, descrizione: "si guarda intorno", pensiero: "Che posto è questo?", umore: .3, corpo: { energia: .8, curiosita: .6, espressione: .3, socialita: .3, paura: notte ? .5 : 0 }, inventario: [], scheda: { gusti: [], abitudini: [] }, nato: Date.now() },
+      mondo: { gatto: "piazza", impronte: true, bottiglia: true, telescopio: { mancanti: ["vite", "manovella"], montati: ["lente"], aggiustato: false } }, aperti: [], convinzioni: [], opere: [], log: [], cervello: { chiamateOggi: 0, massimo: 0 } };
+    applyTime(STATE.tempo); applyWorldState(); renderHud();
+    var thoughts = ["Chissà cosa c'è laggiù.", "Il gatto di pietra mi guarda.", "Voglio trovare qualcosa di bello.", "Che bel posto!"], acts = ["osserva", "cerca", "disegna", "gioca", "riposa"];
+    function next() {
+      var k = STATE.koki, now = Date.now();
+      if (!k.attivita || k.attivita.azione !== "vai") { var to = keys[Math.floor(Math.random() * keys.length)]; if (to === k.luogo) to = "piazza"; var dur = Math.hypot(LOCAL_PLACES[to].x - LOCAL_PLACES[k.luogo].x, LOCAL_PLACES[to].z - LOCAL_PLACES[k.luogo].z) * 900; k.attivita = { azione: "vai", da: k.luogo, a: to, inizio: now, fine: now + dur, perche: "" }; k.descrizione = "cammina verso " + LOCAL_PLACES[to].nome; demoTimer = setTimeout(next, dur); }
+      else { k.luogo = k.attivita.a; var a = acts[Math.floor(Math.random() * acts.length)]; k.attivita = { azione: a, oggetto: "", inizio: now, fine: now + 9000, perche: "" }; k.descrizione = { osserva: "osserva intorno", cerca: "cerca piccole cose", disegna: "disegna", gioca: "gioca", riposa: "si riposa" }[a]; k.pensiero = thoughts[Math.floor(Math.random() * thoughts.length)]; demoTimer = setTimeout(next, 9000); }
+      renderHud();
+    }
+    demoTimer = setTimeout(next, 1500);
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

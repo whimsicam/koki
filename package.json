@@ -1,0 +1,14 @@
+{
+  "name": "koki",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Kōki, lo spirito dell'isola: una creatura che vive da sola su Cloudflare.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
