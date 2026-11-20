@@ -25,6 +25,8 @@ Vive su **Cloudflare**, gratis e senza carta di credito. Pensa con **Workers AI*
 ### Azioni libere e il Mondo narratore
 Oltre alle azioni di base, Kōki può fare **qualsiasi cosa** descritta con le sue parole (azione `libera`). Una seconda mente, il **Mondo**, fa da narratore imparziale: decide cosa succede davvero (riesce, fallisce, imprevisti) e può cambiare l'isola. Crea cose nuove, ne rompe o ne toglie altre, consuma o aggiunge cose alla collezione. Le cose create restano (al massimo 40) e compaiono nell'isola 3D con una forma scelta da un kit low poly. Toccandole se ne legge la descrizione. Il Mondo usa il modello grande (`BIG_MODEL`, massimo `MAX_BIG_CALLS` al giorno), che a volte usa anche Kōki per decidere. I misteri dell'isola non vengono mai risolti dal Mondo.
 
+Nel menu di Kōki non ci sono "disegna" o "gioca": se disegna è un'idea sua, fatta con l'azione libera. In quel caso il Mondo descrive il disegno e un modello di immagini (`IMAGE_MODEL`, massimo `MAX_IMAGES` al giorno) lo trasforma in un disegno a pastelli vero. I disegni sono nella galleria della pagina, e gli ultimi tre sono appesi su un filo accanto alla casa.
+
 ### L'isola
 Metà cose normali e metà strane. Normali: la casa di Kōki, la piazzetta con la fontana, il laghetto col ponticello, il prato fiorito, l'orto, il bosco, il giardino giapponese, la spiaggia, il molo con la barca, il faro, il mulino, la balena. Strane: il telescopio rotto sulla collina (mancano lente, vite e manovella), la torre con l'orologio che va all'indietro, la casetta chiusa con la finestra accesa di notte, la lanterna di pietra che certe notti si accende da sola, il gatto di pietra che si sposta quando nessuno guarda, le impronte sulla spiaggia, la bottiglia col messaggio.
 

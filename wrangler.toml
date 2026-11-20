@@ -34,6 +34,9 @@ BIG_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 # Massimo di chiamate al giorno: modello piccolo e modello grande (oltre, Kōki va "a inerzia" con le regole).
 MAX_AI_CALLS = "150"
 MAX_BIG_CALLS = "40"
+# I disegni veri: modello di immagini e quanti al giorno al massimo.
+IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell"
+MAX_IMAGES = "4"
 # Ogni quanti minuti Kōki vive un turno.
 TICK_MINUTES = "5"
 # Dove sta l'isola nel mondo reale: ora e meteo di Milano.

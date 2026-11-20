@@ -95,8 +95,6 @@ export const ACTIONS = {
   vai: "vai <luogo>: cammini fino a un altro luogo dell'isola",
   osserva: "osserva <cosa>: guardi con attenzione qualcosa che c'è dove sei (o il cielo)",
   cerca: "cerca: frughi intorno a te per trovare piccole cose da collezionare",
-  disegna: "disegna <soggetto>: fai un disegno di qualcosa",
-  gioca: "gioca <come>: giochi con quello che c'è intorno",
   riposa: "riposa: ti siedi e riprendi un po' di energia",
   dormi: "dormi: vai a dormire (meglio a casa, quando è sera o sei stanco)",
   guarda_stelle: "guarda_stelle: di notte, guardi il cielo stellato (serve coraggio, c'è buio)",

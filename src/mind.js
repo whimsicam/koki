@@ -7,7 +7,7 @@ import { PLACES, ACTIONS, FORME, SEGRETI, pick, a as al } from "./world.js";
 export const CORE = [
   "sei curioso: ti chiedi il perché di tutto e vuoi capire come funzionano le cose",
   "sei testardo: quando ti metti in testa qualcosa non molli facilmente",
-  "sei creativo: ti piace inventare, costruire e disegnare",
+  "sei creativo: ti vengono spesso idee nuove e ti piace dare forma a quello che hai in testa",
   "hai paura del buio, ma sei innamorato delle stelle",
   "collezioni piccole cose che trovi in giro"
 ];
@@ -185,10 +185,11 @@ export async function askModel(env, p, maxTokens, model) {
 function mockAnswer(p) {
   const props = p.schema.properties;
   if (props.mosse) {
-    if (Math.random() < .3) return { pensiero: "Mi è venuta un'idea strana.", mosse: [{ azione: "libera", oggetto: "provo a costruire una torretta con i sassi che trovo qui intorno", minuti: 20, perche: "voglio vedere se sta in piedi" }] };
+    if (Math.random() < .3) return { pensiero: "Mi è venuta un'idea strana.", mosse: [{ azione: "libera", oggetto: pick(["provo a costruire una torretta con i sassi che trovo qui intorno", "disegno il gatto di pietra con un carboncino su un sasso piatto"]), minuti: 20, perche: "voglio vedere cosa viene fuori" }] };
     const where = pick(Object.keys(PLACES));
-    return { pensiero: "Chissà cosa c'è oggi " + al(PLACES[where].nome) + ".", mosse: [{ azione: "vai", oggetto: where, minuti: 10, perche: "voglio vedere com'è oggi" }, { azione: pick(["cerca", "osserva", "disegna"]), oggetto: "quello che trovo", minuti: 20, perche: "mi incuriosisce" }], nuovi_pensieri: Math.random() < .2 ? [{ tipo: "domanda", testo: "Chi sposta il gatto di pietra?" }] : [] };
+    return { pensiero: "Chissà cosa c'è oggi " + al(PLACES[where].nome) + ".", mosse: [{ azione: "vai", oggetto: where, minuti: 10, perche: "voglio vedere com'è oggi" }, { azione: pick(["cerca", "osserva"]), oggetto: "quello che trovo", minuti: 20, perche: "mi incuriosisce" }], nuovi_pensieri: Math.random() < .2 ? [{ tipo: "domanda", testo: "Chi sposta il gatto di pietra?" }] : [] };
   }
+  if (props.racconto && /prova a fare questo: "[^"]*disegn/.test(p.user)) return { riuscito: true, racconto: "Kōki ha disegnato il gatto di pietra su un sasso piatto, con un carboncino trovato vicino al falò.", ricordo: "Ho disegnato il gatto di pietra! Gli ho fatto gli occhi grandi.", crea: [], modifica: [], rimuovi: [], usa: [], trova: [], umore: 0.3, disegno: { soggetto: "il gatto di pietra", descrizione_immagine: "a small stone cat statue sitting, big round eyes, charcoal lines on a flat grey stone" } };
   if (props.racconto) return { riuscito: true, racconto: "Kōki ha impilato tre sassi piatti uno sull'altro, con molta pazienza.", ricordo: "Ho fatto una piccola torre di sassi. È venuta un po' storta ma sta in piedi!", crea: [{ nome: "torretta di sassi", descrizione: "tre sassi piatti impilati, un po' storti", forma: "pila_di_sassi", colore: "#9A9284", grandezza: "piccola" }], modifica: [], rimuovi: [], usa: [], trova: [], umore: 0.2 };
   if (props.diario) return { diario: "Oggi ho camminato tanto. Ho trovato cose piccole e belle e le ho messe sulla mensola. Domani voglio tornare sulla collina.", aggiungi_gusto: "mi piace il rumore delle onde" };
   if (props.risposta) return { risposta: "Ciao, Custode! Oggi l'isola è bellissima.", pensiero: "Mi fa piacere che mi parli." };
@@ -202,7 +203,6 @@ export function fallbackDecide(S, ctx) {
     return { pensiero: "È tardi e ho sonno. Torno a casa.", mosse: S.luogo === "casa" ? [{ azione: "dormi", minuti: 60, perche: "ho sonno" }] : [{ azione: "vai", oggetto: "casa", minuti: 10, perche: "è buio" }, { azione: "dormi", minuti: 60, perche: "ho sonno" }] };
   }
   if (b.energia < .3) return { pensiero: "Mi siedo un attimo.", mosse: [{ azione: "riposa", minuti: 30, perche: "sono stanco" }] };
-  if (b.espressione > .6) return { pensiero: "Mi è venuta voglia di disegnare.", mosse: [{ azione: "disegna", oggetto: PLACES[S.luogo].nome, minuti: 30, perche: "voglio ricordarmelo" }] };
   if (b.curiosita > .5) {
     const where = pick(Object.keys(PLACES).filter((k) => k !== S.luogo));
     return { pensiero: "Vado a vedere " + PLACES[where].nome + ".", mosse: [{ azione: "vai", oggetto: where, minuti: 10, perche: "curiosità" }, { azione: "cerca", minuti: 20, perche: "magari trovo qualcosa" }] };
@@ -226,6 +226,7 @@ export function narratorPrompt(S, W, ctx, intento, perche) {
     ctx.oggettiQui.length ? "Cose già presenti qui (con il loro numero):\n" + ctx.oggettiQui.map((o) => `- [${o.id}] ${o.nome}: ${o.descrizione}${o.rotto ? " (rotto)" : ""}`).join("\n") : "Qui non c'è niente di costruito o cambiato.",
     `Cose che Kōki porta con sé: ${S.inventario.length ? S.inventario.join(", ") : "niente"}.`,
     `Kōki prova a fare questo: "${intento}". Perché: "${perche || "non lo dice"}".`,
+    "Se Kōki disegna, dipinge, incide o traccia qualcosa (su carta, su un sasso, sulla sabbia, su un muro...) e ci riesce, compila anche disegno: soggetto (titolo breve in italiano) e descrizione_immagine (in inglese, al massimo 30 parole: cosa si vede nel disegno e con che materiale).",
     "Decidi cosa succede. Rispondi con: riuscito (vero o falso); racconto (1-3 frasi in terza persona, quello che succede davvero); ricordo (1-2 frasi in prima persona, come Kōki se lo ricorderà); crea (cose nuove che restano in questo posto, solo se ha senso: nome, descrizione breve, forma scelta tra " + FORME.join(", ") + ", colore in esadecimale, grandezza piccola, media o grande); modifica (cose già presenti che cambiano: numero, nuova descrizione, rotto vero o falso); rimuovi (numeri delle cose che spariscono); usa (cose che Kōki porta con sé e che consuma, scritte esattamente come sopra); trova (cose nuove che Kōki raccoglie e si porta via); umore (da -0.5 a 0.5, come si sente dopo)."
   ].join("\n\n");
   return {
@@ -239,7 +240,8 @@ export function narratorPrompt(S, W, ctx, intento, perche) {
         rimuovi: { type: "array", items: { type: "integer" } },
         usa: { type: "array", items: { type: "string" } },
         trova: { type: "array", items: { type: "string" } },
-        umore: { type: "number" }
+        umore: { type: "number" },
+        disegno: { type: "object", properties: { soggetto: { type: "string" }, descrizione_immagine: { type: "string" } }, required: ["soggetto"] }
       },
       required: ["riuscito", "racconto", "ricordo"]
     }

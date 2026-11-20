@@ -22,6 +22,7 @@ export class Koki extends DurableObject {
       CREATE TABLE IF NOT EXISTS diario (giorno TEXT PRIMARY KEY, t INTEGER, testo TEXT);
       CREATE TABLE IF NOT EXISTS opere (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, tipo TEXT, titolo TEXT);
       CREATE TABLE IF NOT EXISTS log (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, tipo TEXT, testo TEXT);
+      CREATE TABLE IF NOT EXISTS immagini (opera INTEGER PRIMARY KEY, mime TEXT, dati TEXT);
       CREATE TABLE IF NOT EXISTS oggetti (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, luogo TEXT, nome TEXT, descrizione TEXT, forma TEXT, colore TEXT, grandezza TEXT, rotto INTEGER DEFAULT 0, slot INTEGER);
     `);
   }
@@ -311,6 +312,23 @@ export class Koki extends DurableObject {
     S.umore = clamp(S.umore, -1, 1);
   }
 
+  // il disegno vero: un'immagine a pastelli, fatta da un modello di immagini di Workers AI
+  async disegna(S, T, now, opera, descrizione, notte) {
+    if (S.ai.giorno !== T.giorno) S.ai = { giorno: T.giorno, chiamate: 0, grandi: 0, immagini: 0 };
+    const max = parseInt(this.env.MAX_IMAGES, 10) || 4;
+    if ((S.ai.immagini || 0) >= max) return;
+    S.ai.immagini = (S.ai.immagini || 0) + 1;
+    const prompt = `A child's crayon drawing on rough paper: ${descrizione}. Naive, wobbly lines, simple shapes, soft pastel crayons${notte ? ", drawn at night, a bit darker" : ""}, white paper background, no text.`;
+    try {
+      let dati, mime = "image/jpeg";
+      if (this.env.MOCK_AI === "1") { dati = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="; mime = "image/png"; }
+      else { const res = await this.env.AI.run(this.env.IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell", { prompt, steps: 4 }); dati = res && res.image; }
+      if (!dati) throw new Error("nessuna immagine");
+      this.sql.exec("INSERT OR REPLACE INTO immagini (opera, mime, dati) VALUES (?, ?, ?)", opera, mime, dati);
+      this.sql.exec("DELETE FROM immagini WHERE opera NOT IN (SELECT opera FROM immagini ORDER BY opera DESC LIMIT 60)");
+    } catch (e) { this.logga(now, "errore", "Il disegno non è venuto: " + String(e && e.message || e).slice(0, 200)); }
+  }
+
   oggettoQui(S, testo) {
     const t = (testo || "").toLowerCase(); if (t.length < 3) return null;
     return this.sql.exec("SELECT id, nome, descrizione, rotto FROM oggetti WHERE luogo = ?", S.luogo).toArray().find((o) => t.includes(o.nome.toLowerCase()) || o.nome.toLowerCase().includes(t)) || null;
@@ -355,6 +373,13 @@ export class Koki extends DurableObject {
     }
     const tot = this.sql.exec("SELECT COUNT(*) AS n FROM oggetti").one().n;
     if (tot > 40) for (const o of this.sql.exec("SELECT id, nome FROM oggetti ORDER BY id LIMIT ?", tot - 40).toArray()) { this.sql.exec("DELETE FROM oggetti WHERE id = ?", o.id); this.logga(now, "mondo", `Il tempo e il vento si sono portati via: ${o.nome}.`); }
+    if (r.disegno && r.disegno.soggetto) {
+      const titolo = String(r.disegno.soggetto).slice(0, 120);
+      this.sql.exec("INSERT INTO opere (t, tipo, titolo) VALUES (?, 'disegno', ?)", now, titolo);
+      const opera = this.sql.exec("SELECT MAX(id) AS id FROM opere").one().id;
+      this.logga(now, "disegno", "Ha fatto un disegno: " + titolo + ".");
+      await this.disegna(S, T, now, opera, r.disegno.descrizione_immagine || titolo, T.notte);
+    }
     this.logga(now, "racconto", r.racconto);
     S.esito = r.ricordo || r.racconto;
     this.ricorda(now, S.esito, r.riuscito ? .6 : .45, S.luogo);
@@ -514,7 +539,7 @@ export class Koki extends DurableObject {
       mondo: { gatto: W.gatto, lanterna: !!W.lanterna, impronte: W.impronte, bottiglia: !!W.bottiglia, bottigliaInViaggio: !!W.bottigliaInArrivo, telescopio: W.telescopio },
       aperti: this.sql.exec("SELECT id, tipo, testo, t FROM aperti WHERE chiuso = 0 ORDER BY id DESC").toArray(),
       convinzioni: this.sql.exec("SELECT testo, prove FROM convinzioni ORDER BY prove DESC LIMIT 12").toArray(),
-      opere: this.sql.exec("SELECT t, tipo, titolo FROM opere ORDER BY id DESC LIMIT 30").toArray(),
+      opere: this.sql.exec("SELECT o.id, o.t, o.tipo, o.titolo, (i.opera IS NOT NULL) AS immagine FROM opere o LEFT JOIN immagini i ON i.opera = o.id ORDER BY o.id DESC LIMIT 60").toArray(),
       oggetti: this.sql.exec("SELECT id, t, luogo, nome, descrizione, forma, colore, grandezza, rotto, slot FROM oggetti ORDER BY id").toArray(),
       log: this.sql.exec("SELECT t, tipo, testo FROM log ORDER BY id DESC LIMIT 40").toArray(),
       cervello: { chiamateOggi: S.ai.giorno === T.giorno ? S.ai.chiamate + (S.ai.grandi || 0) : 0, massimo: (parseInt(this.env.MAX_AI_CALLS, 10) || 150) + (parseInt(this.env.MAX_BIG_CALLS, 10) || 40) }
@@ -529,6 +554,7 @@ export class Koki extends DurableObject {
     if (p === "/api/_sveglia") return json({ ok: true });
     if (p === "/api/stato") return json(this.vista());
     if (p === "/api/diario") return json(this.sql.exec("SELECT giorno, testo FROM diario ORDER BY giorno DESC LIMIT 120").toArray());
+    if (p === "/api/disegno") { const r = this.sql.exec("SELECT mime, dati FROM immagini WHERE opera = ?", parseInt(url.searchParams.get("id"), 10) || 0).toArray()[0]; return r ? json(r) : json({ errore: "Nessuna immagine" }, 404); }
     if (p === "/api/ricordi") return json(this.sql.exec("SELECT t, testo, forza, tipo, luogo FROM memorie ORDER BY id DESC LIMIT 140").toArray());
     if (p === "/api/turno" && req.method === "POST") { await this.turno(); return json(this.vista()); }
     if (p === "/api/prova" && req.method === "POST") { // per le prove: fa riflettere o scrivere il diario subito
@@ -567,7 +593,7 @@ export class Koki extends DurableObject {
       return json({ risposta: r.risposta, pensiero: r.pensiero || "" });
     }
     if (p === "/api/rinasci" && req.method === "POST" && url.searchParams.get("conferma") === "RINASCI") {
-      this.sql.exec("DELETE FROM stato; DELETE FROM memorie; DELETE FROM convinzioni; DELETE FROM aperti; DELETE FROM diario; DELETE FROM opere; DELETE FROM log; DELETE FROM oggetti;");
+      this.sql.exec("DELETE FROM stato; DELETE FROM memorie; DELETE FROM convinzioni; DELETE FROM aperti; DELETE FROM diario; DELETE FROM opere; DELETE FROM log; DELETE FROM oggetti; DELETE FROM immagini;");
       this.init(now);
       return json({ ok: true });
     }

@@ -144,7 +144,14 @@
   .feed { display: grid; gap: 5px; font-size: 13px; }
   .feed div { display: grid; grid-template-columns: 44px 1fr; gap: 6px; }
   .feed time { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .gallery figure { margin: 0; display: grid; gap: 4px; }
+  .gallery .paper { aspect-ratio: 1; border-radius: 6px; background: #fbf8ee; box-shadow: 0 2px 8px rgba(20, 40, 50, .14); display: grid; place-items: center; overflow: hidden; padding: 8px; text-align: center; font: 600 18px/1.2 Caveat, cursive; color: #7a6a52; }
+  .gallery .paper img { width: 100%; height: 100%; object-fit: cover; border-radius: 3px; }
+  .gallery figcaption { font-size: 12.5px; }
+  .gallery figcaption small { display: block; color: var(--muted); }
   @media (max-width: 600px) {
+    .dock button { padding: 5px 8px; }
     .views { top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); right: 50%; transform: translateX(50%); }
     .views button { padding: 6px 7px; font-size: 11.5px; white-space: nowrap; }
     .card { bottom: 120px; }
@@ -181,6 +188,7 @@
 <nav class="dock glass" aria-label="Azioni">
   <button data-open="diario"><i>📖</i>Diario</button>
   <button data-open="mente"><i>🌱</i>Kōki</button>
+  <button data-open="disegni"><i>🖍️</i>Disegni</button>
   <button data-open="bottiglia"><i>🍾</i>Bottiglia</button>
   <button data-open="parla"><i>🏮</i>Parla</button>
 </nav>
@@ -191,6 +199,9 @@
   <div class="book" id="d-page"></div>
 </div></section>
 <section class="sheet glass" id="s-mente"><h2>Kōki <button data-close>×</button></h2><div class="body" id="m-body"></div></section>
+<section class="sheet glass" id="s-disegni"><h2>I disegni di Kōki <button data-close>×</button></h2><div class="body">
+  <div class="gallery" id="g-list"></div>
+</div></section>
 <section class="sheet glass" id="s-bottiglia"><h2>Un messaggio in bottiglia <button data-close>×</button></h2><div class="body">
   <p class="muted" style="margin:0">Scrivi un biglietto e affidalo al mare. Arriverà sulla spiaggia tra un po'. Kōki non sa chi lo manda.</p>
   <textarea id="b-text" maxlength="500" placeholder="Caro Kōki…"></textarea>
@@ -1290,7 +1301,8 @@
     var tel = Wd.telescopio || { montati: [], aggiustato: false };
     if (TEL.lens) { TEL.lens.visible = tel.montati.indexOf("lente") >= 0; TEL.screw.visible = tel.montati.indexOf("vite") >= 0; TEL.crank.visible = tel.montati.indexOf("manovella") >= 0; TEL.tube.rotation.z = tel.aggiustato ? 0.55 : -0.3; }
     STONE_L.lit = !!Wd.lanterna;
-    applyObjects();
+    applyObjects(); applyHanging();
+    if ($("s-disegni").classList.contains("open")) renderGallery();
   }
   anim.push(function (t) { if (!STONE_L.light) return; var on = STONE_L.lit && nightK > 0.4, f = 1 + Math.sin(t * 11) * 0.08; STONE_L.light.intensity = on ? 1.6 * f : 0; STONE_L.window.material.emissiveIntensity = on ? 1.4 * f : 0; STONE_L.flame.visible = on; });
 
@@ -1461,6 +1473,45 @@
       "<div><h3>Cronaca</h3><div class='feed'>" + STATE.log.slice(0, 25).map(function (l) { return "<div><time>" + hhmm(l.t) + "</time><span>" + esc(l.testo) + "</span></div>"; }).join("") + "</div></div>" +
       (DEMO ? "" : "<p class='muted' style='margin:0'>Cervello: " + STATE.cervello.chiamateOggi + " pensieri su " + STATE.cervello.massimo + " disponibili oggi.</p>");
   }
+  // ---------- i disegni ----------
+  var IMG = {}, imgWait = {};
+  function drawingData(id) {
+    if (IMG[id]) return Promise.resolve(IMG[id]);
+    if (!imgWait[id]) imgWait[id] = api("/api/disegno?id=" + id).then(function (r) { if (!r || !r.dati) throw 0; IMG[id] = "data:" + r.mime + ";base64," + r.dati; return IMG[id]; });
+    return imgWait[id];
+  }
+  function renderGallery() {
+    var box = $("g-list"), list = (STATE && STATE.opere) || [];
+    if (!list.length) { box.innerHTML = "<p class='muted'>Nessun disegno, per ora. Se un giorno gli verrà voglia di disegnare, lo troverai qui.</p>"; return; }
+    box.innerHTML = list.map(function (o) { return "<figure><div class='paper' data-id='" + o.id + "'>" + (o.immagine ? "…" : esc(o.titolo)) + "</div><figcaption>" + esc(o.titolo) + "<small>" + new Date(o.t).toLocaleDateString("it-IT", { day: "numeric", month: "long" }) + "</small></figcaption></figure>"; }).join("");
+    list.forEach(function (o) { if (!o.immagine) return; drawingData(o.id).then(function (src) { var el2 = box.querySelector(".paper[data-id='" + o.id + "']"); if (el2) el2.innerHTML = "<img alt='" + esc(o.titolo) + "' src='" + src + "'>"; }).catch(function () {}); });
+  }
+  // il filo con gli ultimi tre disegni appesi, accanto alla casa
+  var hang = new THREE.Group(), hangKey = "", hangPapers = [];
+  (function () {
+    var a = ZONE.casa, bf = a.bface != null ? a.bface : a.face, p0 = zoneLoc(a, -2.6, -0.2), p1 = zoneLoc(a, -2.6, 1.6);
+    var y0 = heightAt(p0.x, p0.z), y1 = heightAt(p1.x, p1.z);
+    add(hang, cyl(0.035, 0.045, 1.25, 6), mat(WOOD_D), p0.x, y0 + 0.62, p0.z); add(hang, cyl(0.035, 0.045, 1.25, 6), mat(WOOD_D), p1.x, y1 + 0.62, p1.z);
+    seg(hang, [p0.x, y0 + 1.2, p0.z], [p1.x, y1 + 1.2, p1.z], 0.008, mat("#EEEEEE"), true);
+    for (var i = 0; i < 3; i++) {
+      var u = (i + 1) / 4, pv = G(hang, p0.x + (p1.x - p0.x) * u, y0 + (y1 - y0) * u + 1.19, p0.z + (p1.z - p0.z) * u, Math.atan2(p1.x - p0.x, p1.z - p0.z) + Math.PI / 2);
+      var pm = new THREE.MeshStandardMaterial({ color: "#FBF8EE", roughness: 0.9, side: THREE.DoubleSide });
+      var pl = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.42), pm); pl.position.y = -0.24; pl.castShadow = true; pv.add(pl);
+      add(pv, box(0.04, 0.05, 0.02), mat("#C8452F"), 0, -0.02, 0, true);
+      pv.visible = false; hangPapers.push({ pv: pv, mat: pm });
+      (function (pv, k) { anim.push(function (t) { pv.rotation.x = Math.sin(t * 1.3 + k) * 0.12; }); })(pv, i * 1.7);
+    }
+    hang.visible = false; world.add(hang);
+  })();
+  function applyHanging() {
+    var imgs = ((STATE && STATE.opere) || []).filter(function (o) { return o.immagine; }).slice(0, 3), key = imgs.map(function (o) { return o.id; }).join(",");
+    if (key === hangKey) return; hangKey = key; hang.visible = imgs.length > 0;
+    hangPapers.forEach(function (h, i) {
+      var o = imgs[i]; h.pv.visible = !!o; if (!o) return;
+      drawingData(o.id).then(function (src) { new THREE.TextureLoader().load(src, function (tex) { tex.encoding = THREE.sRGBEncoding; h.mat.map = tex; h.mat.needsUpdate = true; }); }).catch(function () {});
+    });
+  }
+
   var diary = [], dIdx = 0;
   function renderDiary() {
     var page = $("d-page");
@@ -1474,6 +1525,7 @@
     document.querySelectorAll(".sheet").forEach(function (s) { s.classList.remove("open"); });
     $("s-" + id).classList.add("open"); closeCard();
     if (id === "mente" && STATE) renderMind();
+    if (id === "disegni") renderGallery();
     if (id === "diario") { if (DEMO) { diary = [{ giorno: new Date().toISOString().slice(0, 10), testo: "(Anteprima: il diario vero lo scrive Kōki quando il cervello è acceso.)" }]; dIdx = 0; renderDiary(); } else api("/api/diario").then(function (d) { diary = d; dIdx = 0; renderDiary(); }).catch(function () {}); }
     if (id === "pass") setTimeout(function () { $("p-in").focus(); }, 50);
   }
