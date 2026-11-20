@@ -7,80 +7,80 @@ export const PLACES = {
     nome: "la casa", x: 4.5, z: 12.5,
     desc: "La tua casetta tonda con il tetto di muschio e la porta azzurra. Dentro c'è una mensola dove tieni le cose che trovi.",
     dettagli: ["La porta azzurra cigola un po'.", "Dal camino esce un filo di fumo.", "Sulla mensola c'è ancora spazio.", "Davanti alla porta ci sono dei sassi piatti, uno dopo l'altro.", "Sul filo del bucato sventolano tre panni colorati."],
-    cose: ["bottone sotto il letto", "matita mozzicata", "biglia di vetro"], coperto: true
+    cose: ["bottone d'osso con tre buchi invece di quattro", "biglia con dentro una bollicina d'aria", "chiave minuscola senza serratura", "dente di pettine di legno"], coperto: true
   },
   piazza: {
     nome: "la piazzetta", x: 0, z: 0,
     desc: "La piazza al centro dell'isola, con la fontana, le bancarelle e i lampioni. Da qui partono tutti i sentieri.",
     dettagli: ["L'acqua della fontana fa un rumore allegro.", "Le bancarelle hanno i tendoni a righe.", "Da qui si vedono quasi tutti i posti dell'isola.", "Sulla bacheca ci sono dei foglietti colorati."],
-    cose: ["sassolino colorato", "bottone perso", "moneta antica"]
+    cose: ["moneta con un buco in mezzo", "biglietto strappato con mezza parola", "tappo di sughero morso", "perla di vetro blu"]
   },
   laghetto: {
     nome: "il laghetto", x: 0.5, z: 17.5,
     desc: "Un laghetto con le ninfee, un ponticello di legno e due anatre bianche.",
     dettagli: ["Dal ponticello ti vedi riflesso nell'acqua.", "Le anatre nuotano in fila.", "Le ninfee si chiudono quando fa sera.", "Tra le canne gracida qualcosa."],
-    cose: ["sasso piatto", "piuma bianca", "conchiglia di lago"]
+    cose: ["sasso con una riga bianca tutt'intorno", "piuma d'anatra bagnata", "guscio di lumaca d'acqua vuoto", "canna cava che fischia"]
   },
   giardino: {
     nome: "il prato fiorito", x: -7.5, z: 6.5,
     desc: "Un prato pieno di fiori di tanti colori, con le farfalle e le arnie delle api.",
     dettagli: ["Una farfalla gialla si è posata su un fiore viola.", "I fiori profumano di più dopo la pioggia.", "Le api entrano ed escono dalle arnie.", "Ci sono fiori che non hai mai visto altrove."],
-    cose: ["petalo secco", "seme a elica", "sassolino rosa"]
+    cose: ["petalo che non perde il colore", "seme a elica", "ala di farfalla trasparente", "sassolino rosa a forma di goccia"]
   },
   bosco: {
     nome: "il bosco", x: -10.5, z: -8.5,
     desc: "Una radura nel bosco con un albero enorme e vecchissimo, funghi rossi in cerchio e un tronco cavo.",
     dettagli: ["Nel tronco dell'albero vecchio c'è un buco a forma di cuore.", "I funghi crescono in cerchio, come se ballassero.", "Nel tronco cavo l'eco ripete i rumori.", "Si sente un picchio da qualche parte."],
-    cose: ["pigna", "ghianda col cappello", "piuma a righe", "foglia rossa"]
+    cose: ["pigna chiusa che non si apre", "ghianda con il cappello doppio", "piuma a righe", "pezzo di corteccia con un buchino"]
   },
   collina: {
     nome: "la collina", x: -5.5, z: -17.5,
     desc: "Il punto più alto dell'isola, con una cascata. In cima c'è un vecchio telescopio su una piattaforma di pietra.",
     dettagli: ["Da quassù si vede tutto il mare intorno.", "La cascata scende fino al laghetto di sotto.", "C'è un cartello con una stella disegnata.", "Il vento qui è più forte."],
-    cose: ["sassolino luccicante", "trifoglio"]
+    cose: ["sassolino che luccica solo al sole", "quadrifoglio con una foglia piegata", "pezzo di vetro curvo"]
   },
   spiaggia: {
     nome: "la spiaggia", x: 4.9, z: 22.2,
     desc: "Una spiaggia di sabbia chiara dove arrivano le onde. Il mare porta spesso piccole cose.",
     dettagli: ["Le onde lasciano disegni sulla sabbia.", "La sabbia è tiepida.", "Lontano si vede il faro sul suo isolotto.", "Un granchio corre di lato."],
-    cose: ["conchiglia a spirale", "vetro di mare", "sasso liscio", "stella marina secca"]
+    cose: ["conchiglia a spirale", "vetro di mare verde smerigliato", "sasso liscio con un buco", "stella marina secca con quattro braccia"]
   },
   molo: {
     nome: "il molo", x: 23.4, z: 8.8,
     desc: "Un lungo molo di legno con una casetta rossa in fondo. Una barca parte e torna. Da qui un giorno partirà il traghetto per le altre isole.",
     dettagli: ["Le assi del molo scricchiolano.", "L'acqua sotto il molo è profonda e scura.", "La barca è appena tornata.", "I gabbiani si posano sui pali."],
-    cose: ["pezzo di corda", "chiodo arrugginito", "conchiglia piatta"]
+    cose: ["nodo di corda che nessuno sa sciogliere", "chiodo arrugginito piegato a uncino", "anello di metallo verde"]
   },
   orologio: {
     nome: "la torre dell'orologio", x: 11, z: 5.5,
     desc: "Una torre storta con un grande orologio e degli ingranaggi che girano.",
     dettagli: ["Le lancette dell'orologio girano all'indietro.", "Gli ingranaggi fanno un ticchettio regolare.", "La torre è un po' storta, come se fosse stanca.", "Accanto c'è una clessidra enorme."],
-    cose: ["ingranaggio minuscolo", "vite d'ottone"]
+    cose: ["ingranaggio con un dente mancante", "vite d'ottone", "lancetta minuscola"]
   },
   casetta: {
     nome: "la casetta chiusa", x: 15, z: -10.5,
     desc: "Una casetta viola e storta, con l'edera sui muri. La porta è chiusa con un lucchetto d'oro.",
     dettagli: ["Il lucchetto è chiuso. Non c'è nessuna chiave in giro.", "Dalla buca delle lettere spunta una busta, ma è incastrata.", "Se bussi, nessuno risponde.", "Dalle finestre non si vede dentro, è tutto buio."],
     dettagliNotte: ["Di notte una finestra della casetta è accesa, con una luce viola. Ma dentro non si vede nessuno."],
-    cose: ["foglia d'edera", "chiodo storto"]
+    cose: ["foglia d'edera a cinque punte", "chiodo storto", "pezzo di vetro viola"]
   },
   orto: {
     nome: "l'orto", x: -8, z: 13,
     desc: "Un orto con le file di carote, cavoli e pomodori, uno spaventapasseri e una piccola serra di vetro.",
     dettagli: ["Lo spaventapasseri dondola un po' col vento.", "Nella serra fa caldo.", "Le carote spuntano con il loro ciuffo.", "C'è un innaffiatoio blu vicino al recinto."],
-    cose: ["seme di zucca", "fagiolo secco", "carota piccola"]
+    cose: ["seme di zucca nero", "fagiolo a macchie", "carota storta con due punte"]
   },
   lanterna: {
     nome: "la lanterna di pietra", x: -17, z: 2.5,
     desc: "Una vecchia lanterna di pietra in mezzo a un cerchio di sassi coperti di muschio.",
     dettagli: ["La lanterna è fredda, ma dentro c'è un po' di cera sciolta.", "I sassi intorno sono disposti in cerchio, come se qualcuno li avesse messi apposta.", "Il muschio sui sassi è morbido."],
-    cose: ["sasso muschiato", "pezzetto di cera"]
+    cose: ["sasso muschiato morbido", "goccia di cera indurita"]
   },
   giardino_giapponese: {
     nome: "il giardino giapponese", x: 8.5, z: -16.5,
     desc: "Un giardino con un torii rosso, un bonsai, un laghetto con il ponticello e due lanterne.",
     dettagli: ["Il bonsai è piccolo ma sembra vecchissimo.", "Il torii rosso sembra una porta che non porta da nessuna parte.", "Nel laghetto nuotano i pesci rossi.", "I ciliegi cambiano colore con le stagioni."],
-    cose: ["sassolino bianco", "foglia d'acero"]
+    cose: ["sassolino bianco perfettamente tondo", "foglia d'acero rossa", "campanellino senza batacchio"]
   }
 };
 
@@ -96,7 +96,7 @@ export const ACTIONS = {
   osserva: "osserva <cosa>: guardi con attenzione qualcosa che c'è dove sei: una cosa, un dettaglio, l'acqua, gli alberi, il cielo, le stelle...",
   cerca: "cerca: frughi intorno a te per trovare piccole cose da collezionare",
   riposa: "riposa: ti siedi e riprendi un po' di energia",
-  dormi: "dormi: vai a dormire (meglio a casa, quando è sera o sei stanco)",
+  dormi: "dormi: vai a dormire a casa (di notte; di giorno al massimo fai un pisolino)",
   aggiusta_telescopio: "aggiusta_telescopio: sulla collina, provi a montare i pezzi che hai trovato",
   leggi_bottiglia: "leggi_bottiglia: se c'è una bottiglia dove sei, la apri e leggi il messaggio",
   sistema_collezione: "sistema_collezione: a casa, metti in ordine le cose che hai trovato",

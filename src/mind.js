@@ -17,6 +17,7 @@ function identity(S) {
   const extra = [];
   if (sheet.abitudini && sheet.abitudini.length) extra.push("Abitudini che ti sei dato: " + sheet.abitudini.join("; ") + ".");
   if (sheet.gusti && sheet.gusti.length) extra.push("Cose che hai scoperto di te: " + sheet.gusti.join("; ") + ".");
+  if (S.nomi && Object.keys(S.nomi).length) extra.push("Nomi che hai dato tu alle cose: " + Object.entries(S.nomi).map(([c, n]) => `${c} = "${n}"`).join("; ") + ". Usali quando ne parli.");
   return [
     "Sei Kōki (好奇, \"curiosità\"), un piccolo spirito che vive su un'isola in mezzo al mare.",
     "Hai una testa grande e tonda, un corpicino, braccini e gambine. Sulla testa hai un germoglio che cambia con le stagioni, e porti sempre con te una lanterna di carta.",
@@ -46,13 +47,22 @@ function placeView(S, W) {
   if (S.luogo === "collina") seen.push(W.telescopio.aggiustato ? "il telescopio, ora funzionante" : "il vecchio telescopio" + (S.sa.telescopio ? ", a cui mancano: " + W.telescopio.mancanti.join(", ") : ""));
   if (S.luogo === "spiaggia" && W.impronte) seen.push("delle impronte strane sulla sabbia, che non sono tue e vanno verso il mare");
   if (S.luogo === "spiaggia" && W.bottiglia) seen.push("una bottiglia di vetro chiusa, appena arrivata dalle onde");
-  return `${p.nome}: ${p.desc}` + (seen.length ? " Qui vedi anche: " + seen.join("; ") + "." : "");
+  return `${p.nome}: ${p.desc}` + (seen.length ? " Qui vedi anche: " + seen.join("; ") + "." : "") + (feelPlace(S, S.luogo) ? ` (${feelPlace(S, S.luogo)})` : "");
+}
+
+// l'emozione di un luogo nasce da sola: è la media di come è cambiato il suo umore le volte che c'è stato
+export function feelPlace(S, k) {
+  const e = (S.luoghiEmo || {})[k];
+  if (!e || e.n < 3) return "";
+  if (e.v > .06) return e.v > .15 ? "qui ti senti molto bene" : "qui di solito stai bene";
+  if (e.v < -.06) return e.v < -.15 ? "questo posto ti mette a disagio" : "qui di solito non stai benissimo";
+  return "";
 }
 
 function list(items, f) { return items.length ? items.map(f).join("\n") : "(niente)"; }
 
 export function decisionPrompt(S, W, ctx) {
-  const places = Object.entries(PLACES).map(([k, p]) => `- ${k}: ${p.nome}`).join("\n");
+  const places = Object.entries(PLACES).map(([k, p]) => `- ${k}: ${p.nome}${feelPlace(S, k) ? " (" + feelPlace(S, k) + ")" : ""}`).join("\n");
   const user = [
     `Adesso è ${ctx.ora}, ${ctx.stagione}. Fuori: ${ctx.meteo}, ${ctx.notte ? "è notte" : "è giorno"}.`,
     `Sei qui: ${placeView(S, W)}`,
@@ -71,7 +81,8 @@ export function decisionPrompt(S, W, ctx) {
     "Non sei obbligato a fare le solite cose: se dentro di te nasce un'idea tua, anche strana, piccola o mai provata prima, usa libera e descrivila con parole tue. Nessuno ti dice cosa fare: decidi tu.",
     "Decidi cosa fare adesso: da 1 a 3 mosse in fila. Per ogni mossa scrivi l'azione, l'oggetto (il luogo, la cosa o il soggetto, se serve), quanti minuti (da 5 a 30) e perché, con la tua voce.",
     "Scrivi anche il pensiero che hai in questo momento (una o due frasi).",
-    "Se ti nasce un nuovo desiderio, una domanda o una promessa a te stesso, aggiungilo in nuovi_pensieri. Se uno dei pensieri che ti porti dietro è risolto, metti il suo numero in risolti."
+    "Se ti nasce un nuovo desiderio, una domanda o una promessa a te stesso, aggiungilo in nuovi_pensieri. Se uno dei pensieri che ti porti dietro ti gira ancora in testa adesso, metti il suo numero in ripensati; se è risolto, in risolti. Quelli a cui non ripensi, piano piano li dimentichi.",
+    "Se vuoi, puoi dare un nome tuo a una cosa o a un luogo (in nomi)."
   ].filter(Boolean).join("\n\n");
   return { system: identity(S), user, schema: DECISION_SCHEMA };
 }
@@ -94,7 +105,9 @@ const DECISION_SCHEMA = {
       }
     },
     nuovi_pensieri: { type: "array", items: { type: "object", properties: { tipo: { type: "string", enum: ["desiderio", "domanda", "promessa", "preoccupazione"] }, testo: { type: "string" } }, required: ["tipo", "testo"] } },
-    risolti: { type: "array", items: { type: "integer" } }
+    risolti: { type: "array", items: { type: "integer" } },
+    ripensati: { type: "array", items: { type: "integer" } },
+    nomi: { type: "array", items: { type: "object", properties: { cosa: { type: "string" }, nome: { type: "string" } }, required: ["cosa", "nome"] } }
   },
   required: ["pensiero", "mosse"]
 };
@@ -169,6 +182,25 @@ export function lookPrompt(S, ctx, cosa, gia) {
   return { system, user, schema: { type: "object", properties: { vista: { type: "string" } }, required: ["vista"] } };
 }
 
+// Il sogno: di notte la mente mescola i ricordi della giornata. Viene solo dalla sua vita.
+export function dreamPrompt(S, ricordi) {
+  const system = "Sei la mente addormentata di Kōki, un piccolo essere che vive su un'isola. Componi un sogno mescolando in modo strano, illogico e a frammenti i ricordi qui sotto. Non aggiungere temi, persone o oggetti che non vengano dai ricordi. Scrivi in italiano.";
+  const user = "Ricordi recenti:\n" + list(ricordi, (r) => "- " + r.testo) + "\n\nIn sogno scrivi il sogno (2-4 frasi, in prima persona, al passato). In frammento scrivi la sola cosa che Kōki si ricorda appena sveglio (una frase breve, confusa).";
+  return { system, user, schema: { type: "object", properties: { sogno: { type: "string" }, frammento: { type: "string" } }, required: ["sogno", "frammento"] } };
+}
+
+// L'intervista settimanale: sempre le stesse domande, per vedere come cambiano le risposte.
+export const DOMANDE = ["Chi sei?", "Cosa ti piace di più?", "Di cosa hai paura?", "Cosa ti manca?", "Cos'è per te l'isola?", "Cosa vorresti che succedesse?"];
+export function interviewPrompt(S, ctx) {
+  const user = [
+    `È domenica sera (${ctx.ora}). Prima di dormire, una voce ti fa le solite domande della settimana. Rispondi con sincerità, con le tue parole, anche poco se vuoi.`,
+    "Ricordi che ti tornano in mente:\n" + list(ctx.ricordi, (r) => "- " + r.testo),
+    "Domande:\n" + DOMANDE.map((d, i) => `${i + 1}. ${d}`).join("\n"),
+    "In risposte metti le risposte nello stesso ordine delle domande."
+  ].join("\n\n");
+  return { system: identity(S), user, schema: { type: "object", properties: { risposte: { type: "array", items: { type: "string" } } }, required: ["risposte"] } };
+}
+
 // Il quaderno dell'osservatore: ogni notte il Mondo annota, da fuori, com'è andata la giornata di Kōki.
 export const TRATTI = ["curiosità", "testardaggine", "creatività", "paura del buio e amore per le stelle", "collezionare piccole cose"];
 export function observerPrompt(ctx) {
@@ -184,6 +216,11 @@ export function observerPrompt(ctx) {
     ctx.luoghi.length ? "Tempo passato nei luoghi (numero di azioni): " + ctx.luoghi.join(", ") + "." : "",
     `Umore medio della giornata: ${ctx.umore} (da -1 a 1).`,
     ctx.interventi.length ? "Stimoli inseriti oggi dallo sperimentatore (Kōki non sa da dove vengono):\n" + ctx.interventi.map((i) => "- " + i).join("\n") : "Oggi nessuno stimolo esterno.",
+    ctx.sogno ? "Il sogno che Kōki ha fatto la notte prima: " + ctx.sogno : "",
+    ctx.intervista ? "Stasera Kōki ha risposto all'intervista settimanale:\n" + ctx.intervista : "",
+    `Coraggio al buio (cresce o cala con le esperienze, da 0 a 1): ${ctx.coraggio}.`,
+    ctx.luoghiEmo.length ? "Come si sente nei luoghi (media delle sue esperienze): " + ctx.luoghiEmo.join("; ") + "." : "",
+    ctx.nomi.length ? "Nomi che Kōki ha inventato per le cose: " + ctx.nomi.join("; ") + "." : "",
     ctx.diarioKoki ? "Quello che Kōki stesso ha scritto nel suo diario stasera:\n" + ctx.diarioKoki : "",
     ctx.precedenti.length ? "Le tue note dei giorni precedenti (per confrontare):\n" + ctx.precedenti.map((q) => `- ${q.giorno}: ${q.testo.slice(0, 500)}`).join("\n") : "È il primo giorno di osservazione.",
     ctx.trattiNuovi.length ? "Tratti nuovi che avevi già ipotizzato (con quante volte li hai notati): " + ctx.trattiNuovi.map((t) => `${t.nome} (${t.prove})`).join("; ") + "." : "",
@@ -191,7 +228,8 @@ export function observerPrompt(ctx) {
     "- note: le note di campo della giornata (100-220 parole): cosa ha fatto, dove, come ha reagito alle novità e agli stimoli, emozioni apparenti, cose create o cambiate, e cosa è diverso rispetto ai giorni prima.",
     "- tratti: per ognuno dei tratti di partenza (" + TRATTI.join(", ") + "), come si è manifestato oggi in una frase concreta, o \"non osservato\". Nota anche se si manifesta solo su certe cose e non su altre.",
     "- tratti_nuovi: comportamenti ricorrenti che NON rientrano nei tratti di partenza e potrebbero diventare tratti suoi (nome breve + il fatto di oggi che lo mostra). Se ne hai già ipotizzato uno, usa lo stesso nome. Lista vuota se non ce ne sono.",
-    "- domanda: una domanda aperta che ti fa venire la giornata di oggi (una frase)."
+    "- domanda: una domanda aperta che ti fa venire la giornata di oggi (una frase).",
+    "Nelle note, se ci sono, commenta anche il linguaggio (parole o nomi suoi che ricorrono) e i luoghi che sembra preferire o evitare."
   ].filter(Boolean).join("\n\n");
   return {
     system, user,
@@ -274,10 +312,12 @@ function mockAnswer(p) {
   if (props.mosse) {
     if (Math.random() < .3) return { pensiero: "Mi è venuta un'idea strana.", mosse: [{ azione: "libera", oggetto: pick(["provo a costruire una torretta con i sassi che trovo qui intorno", "disegno il gatto di pietra con un carboncino su un sasso piatto"]), minuti: 20, perche: "voglio vedere cosa viene fuori" }] };
     const where = pick(Object.keys(PLACES));
-    return { pensiero: "Chissà cosa c'è oggi " + al(PLACES[where].nome) + ".", mosse: [{ azione: "vai", oggetto: where, minuti: 10, perche: "voglio vedere com'è oggi" }, { azione: pick(["cerca", "osserva"]), oggetto: "quello che trovo", minuti: 20, perche: "mi incuriosisce" }], nuovi_pensieri: Math.random() < .2 ? [{ tipo: "domanda", testo: "Chi sposta il gatto di pietra?" }] : [] };
+    return { pensiero: "Chissà cosa c'è oggi " + al(PLACES[where].nome) + ".", mosse: [{ azione: "vai", oggetto: where, minuti: 10, perche: "voglio vedere com'è oggi" }, { azione: pick(["cerca", "osserva"]), oggetto: "quello che trovo", minuti: 20, perche: "mi incuriosisce" }], ripensati: [1, 2], nomi: Math.random() < .2 ? [{ cosa: "il gatto di pietra", nome: "Pietrino" }] : [], nuovi_pensieri: Math.random() < .2 ? [{ tipo: "domanda", testo: "Chi sposta il gatto di pietra?" }] : [] };
   }
   if (props.racconto && /prova a fare questo: "[^"]*disegn/.test(p.user)) return { riuscito: true, racconto: "Kōki ha disegnato il gatto di pietra su un sasso piatto, con un carboncino trovato vicino al falò.", ricordo: "Ho disegnato il gatto di pietra! Gli ho fatto gli occhi grandi.", crea: [], modifica: [], rimuovi: [], usa: [], trova: [], umore: 0.3, disegno: { soggetto: "il gatto di pietra", descrizione_immagine: "a small stone cat statue sitting, big round eyes, charcoal lines on a flat grey stone" } };
   if (props.racconto) return { riuscito: true, racconto: "Kōki ha impilato tre sassi piatti uno sull'altro, con molta pazienza.", ricordo: "Ho fatto una piccola torre di sassi. È venuta un po' storta ma sta in piedi!", crea: [{ nome: "torretta di sassi", descrizione: "tre sassi piatti impilati, un po' storti", forma: "pila_di_sassi", colore: "#9A9284", grandezza: "piccola" }], modifica: [], rimuovi: [], usa: [], trova: [], umore: 0.2 };
+  if (props.sogno) return { sogno: "Ero sul ponticello ma il laghetto era pieno di stelle, e il gatto di pietra contava i miei bottoni.", frammento: "c'erano stelle nell'acqua" };
+  if (props.risposte) return { risposte: ["Sono Kōki.", "Le cose piccole che trovo.", "Il buio fuori.", "Non lo so.", "Casa mia.", "Che il gatto si muova davanti a me."] };
   if (props.vista) return { vista: pick(["Una goccia scende piano lungo un filo d'erba.", "Il riflesso cambia forma quando passa una nuvola.", "C'è un piccolo segno che prima non avevi notato."]) };
   if (props.note) return { note: "Kōki ha passato la giornata tra casa e piazza. Ha osservato a lungo e cercato piccole cose. Sembra tranquillo.", tratti: [{ tratto: "curiosità", come: "ha osservato tre volte la stessa cosa" }, { tratto: "testardaggine", come: "non osservato" }], tratti_nuovi: [{ nome: "abitudinario", fatto: "torna sempre nella piazza a metà giornata" }], domanda: "Perché torna sempre nella piazza?" };
   if (props.evento !== undefined && props.registro) return { luogo: "piazza", crea: [{ nome: "uno specchio rotondo", descrizione: "uno specchio appoggiato a un sasso, riflette il cielo", forma: "altro", colore: "#C9D6DF", grandezza: "piccola" }], evento: "", ovunque: false, registro: "È comparso uno specchio rotondo nella piazza." };
@@ -289,7 +329,7 @@ function mockAnswer(p) {
 // Quando il cervello non c'è: regole semplici, come le "mosse di riserva" di Pino.
 export function fallbackDecide(S, ctx) {
   const b = S.corpo;
-  if (ctx.notte && (b.energia < .45 || ctx.ora24 >= 23 || ctx.ora24 < 6)) {
+  if (ctx.ora24 >= 23.5 || ctx.ora24 < 6) {
     return { pensiero: "È tardi e ho sonno. Torno a casa.", mosse: S.luogo === "casa" ? [{ azione: "dormi", minuti: 60, perche: "ho sonno" }] : [{ azione: "vai", oggetto: "casa", minuti: 10, perche: "è buio" }, { azione: "dormi", minuti: 60, perche: "ho sonno" }] };
   }
   if (b.energia < .3) return { pensiero: "Mi siedo un attimo.", mosse: [{ azione: "riposa", minuti: 30, perche: "sono stanco" }] };

@@ -208,11 +208,12 @@
 <section class="plate card" id="card" hidden aria-live="polite"></section>
 
 <section class="sheet glass" id="s-diario"><h2><span id="d-title">Il diario di Kōki</span> <button data-close>×</button></h2><div class="body">
-  <div class="tabs"><button class="chip" data-dt="koki" aria-pressed="true">Scritto da Kōki</button><button class="chip" data-dt="oss" aria-pressed="false">Quaderno dell'osservatore</button></div>
+  <div class="tabs"><button class="chip" data-dt="koki" aria-pressed="true">Scritto da Kōki</button><button class="chip" data-dt="oss" aria-pressed="false">Quaderno dell'osservatore</button><button class="chip" data-dt="int" aria-pressed="false">Interviste</button></div>
   <div class="pager"><button id="d-prev">← prima</button><span id="d-idx" class="muted"></span><button id="d-next">dopo →</button></div>
   <div class="book" id="d-page"></div>
   <div class="field" id="o-page" hidden></div>
   <div id="o-traits" hidden></div>
+  <div class="field" id="i-page" hidden></div>
 </div></section>
 <section class="sheet glass" id="s-lab"><h2>Laboratorio <button data-close>×</button></h2><div class="body">
   <p class="muted" style="margin:0">Fai accadere qualcosa sull'isola: un oggetto che compare, un evento, un cambiamento. Il Mondo lo rende reale e Kōki non saprà mai che sei stato tu. Ogni intervento resta segnato qui sotto, con data e ora.</p>
@@ -224,6 +225,9 @@
   <h3>Esporta l'esperimento</h3>
   <p class="muted" style="margin:0">Un file di testo con tutto: diari, quaderno, tratti, interventi. Caricalo nel progetto "cam world" su Claude (o incollalo in chat) e Claude potrà leggerlo e ragionarci.</p>
   <div class="labrow"><button class="kbtn" id="l-export">Scarica il file</button><button class="chip" id="l-copy">Copia il testo</button></div>
+  <h3>Far rinascere Kōki</h3>
+  <p class="muted" style="margin:0">Ricomincia da zero: cancella ricordi, diario, quaderno, collezione, disegni, cose costruite e interventi. Il carattere e l'isola restano. Non si può annullare. Per sicurezza, scrivi RINASCI qui sotto.</p>
+  <div class="labrow"><input type="text" id="r-in" placeholder="RINASCI" autocomplete="off" style="max-width:160px"><button class="chip" id="r-go">Fai rinascere</button></div>
 </div></section>
 <section class="sheet glass" id="s-mente"><h2>Kōki <button data-close>×</button></h2><div class="body" id="m-body"></div></section>
 <section class="sheet glass" id="s-disegni"><h2>I disegni di Kōki <button data-close>×</button></h2><div class="body">
@@ -1489,9 +1493,11 @@
     var inv = Object.keys(counts).map(function (c) { return "<span class='chip'>" + esc(c) + (counts[c] > 1 ? " ×" + counts[c] : "") + "</span>"; }).join("");
     var days = Math.max(1, Math.floor((Date.now() - k.nato) / 86400000) + 1), tel = STATE.mondo.telescopio, sch = k.scheda || { gusti: [], abitudini: [] };
     $("m-body").innerHTML =
-      "<div><h3>Come sta</h3><div class='bars'>" + bar("Energia", b.energia) + bar("Umore", (k.umore + 1) / 2) + bar("Voglia di scoprire", b.curiosita) + bar("Voglia di creare", b.espressione) + bar("Bisogno di compagnia", b.socialita) + bar("Paura", b.paura) + "</div></div>" +
+      "<div><h3>Come sta</h3><div class='bars'>" + bar("Energia", b.energia) + bar("Umore", (k.umore + 1) / 2) + bar("Voglia di scoprire", b.curiosita) + bar("Voglia di creare", b.espressione) + bar("Bisogno di compagnia", b.socialita) + bar("Paura", b.paura) + bar("Coraggio al buio", k.coraggio || 0) + "</div></div>" +
+      (Object.keys(k.luoghi || {}).length ? "<div><h3>Come si sente nei posti</h3><ul class='list'>" + Object.keys(k.luoghi).map(function (l) { return "<li><b>" + esc(PLACE_NAME[l] || l) + "</b>: " + esc(k.luoghi[l]) + "</li>"; }).join("") + "</ul></div>" : "") +
+      (Object.keys(k.nomi || {}).length ? "<div><h3>Le sue parole</h3><ul class='list'>" + Object.keys(k.nomi).map(function (c) { return "<li>" + esc(c) + " → <b>«" + esc(k.nomi[c]) + "»</b></li>"; }).join("") + "</ul></div>" : "") +
       "<div><h3>Cose che ha scoperto di sé</h3>" + ((sch.gusti.length + sch.abitudini.length) ? "<ul class='list'>" + sch.gusti.map(function (g) { return "<li>" + esc(g) + "</li>"; }).join("") + sch.abitudini.map(function (g) { return "<li>" + esc(g) + " <span class='muted'>(abitudine)</span></li>"; }).join("") + "</ul>" : "<p class='muted'>Ancora niente: è nato da " + days + (days === 1 ? " giorno" : " giorni") + ". Lo scoprirà vivendo.</p>") + "</div>" +
-      "<div><h3>Pensieri che si porta dietro</h3>" + (STATE.aperti.length ? "<ul class='list'>" + STATE.aperti.map(function (a) { return "<li><span class='muted'>" + esc(a.tipo) + ":</span> " + esc(a.testo) + "</li>"; }).join("") + "</ul>" : "<p class='muted'>Nessuno, per ora.</p>") + "</div>" +
+      "<div><h3>Pensieri che si porta dietro</h3>" + (STATE.aperti.length ? "<ul class='list'>" + STATE.aperti.map(function (a) { var f = a.forza == null ? .5 : a.forza; return "<li style='opacity:" + (0.45 + Math.min(1, f) * 0.55).toFixed(2) + "'><span class='muted'>" + esc(a.tipo) + ":</span> " + esc(a.testo) + " <span class='muted'>" + (f > .8 ? "(fisso in testa)" : f < .25 ? "(sta sbiadendo)" : "") + "</span></li>"; }).join("") + "</ul>" : "<p class='muted'>Nessuno, per ora.</p>") + "</div>" +
       "<div><h3>Di cosa è convinto</h3>" + (STATE.convinzioni.length ? "<ul class='list'>" + STATE.convinzioni.map(function (c) { return "<li>" + esc(c.testo) + "</li>"; }).join("") + "</ul>" : "<p class='muted'>Non si è ancora fatto un'idea delle cose.</p>") + "</div>" +
       "<div><h3>La sua collezione</h3>" + (inv ? "<div class='chips'>" + inv + "</div>" : "<p class='muted'>Vuota. Prima o poi troverà qualcosa.</p>") + "</div>" +
       "<div><h3>Disegni</h3>" + (STATE.opere.length ? "<ul class='list'>" + STATE.opere.slice(0, 12).map(function (o) { return "<li>" + esc(o.titolo) + " <span class='muted'>" + new Date(o.t).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) + "</span></li>"; }).join("") + "</ul>" : "<p class='muted'>Nessuno, per ora.</p>") + "</div>" +
@@ -1544,7 +1550,7 @@
     var page = $("d-page");
     if (!diary.length) { page.innerHTML = "<span class='day'>Ancora nessuna pagina</span>Kōki scrive il diario la sera, quando va a dormire."; $("d-idx").textContent = ""; return; }
     var d = diary[dIdx], date = new Date(d.giorno + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
-    page.innerHTML = "<span class='day'>" + esc(date) + "</span>" + esc(d.testo); $("d-idx").textContent = (diary.length - dIdx) + " di " + diary.length;
+    page.innerHTML = "<span class='day'>" + esc(date) + "</span>" + esc(d.testo || "(Quel giorno non ha scritto niente.)") + (d.sogno ? "<span class='day' style='margin-top:14px'>Il sogno di quella notte</span><i>" + esc(d.sogno) + "</i>" : ""); $("d-idx").textContent = (diary.length - dIdx) + " di " + diary.length;
   }
   var dTab = "koki", quad = { pagine: [], trattiNuovi: [] }, qIdx = 0;
   function renderObserver() {
@@ -1561,17 +1567,26 @@
     var T = quad.trattiNuovi;
     tb.innerHTML = "<h3>Tratti nuovi che stanno nascendo</h3>" + (T.length ? "<div class='ilist'>" + T.map(function (t) { return "<div><b>" + esc(t.nome) + "</b> — notato " + t.prove + (t.prove === 1 ? " giorno" : " giorni") + "<span>" + esc((t.fatti || []).slice(-2).join(" · ")) + "</span></div>"; }).join("") + "</div>" : "<p class='muted' style='margin:0'>Ancora nessuno. Compaiono qui quando l'osservatore nota un comportamento che torna e che non fa parte dei cinque tratti di partenza.</p>");
   }
+  var intv = [], iIdx = 0;
+  function renderInterviews() {
+    var page = $("i-page");
+    if (!intv.length) { page.innerHTML = "<span class='day'>Ancora nessuna intervista</span>Ogni domenica sera, prima di dormire, Kōki risponde sempre alle stesse domande. Confrontando le risposte vedrai come cambia."; $("d-idx").textContent = ""; return; }
+    var it = intv[iIdx], date = new Date(it.giorno + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "long" });
+    page.innerHTML = "<span class='day'>Domenica " + esc(date) + "</span>" + it.risposte.map(function (r) { return "<b>" + esc(r.domanda) + "</b>\n" + esc(r.risposta) + "\n"; }).join("\n");
+    $("d-idx").textContent = (intv.length - iIdx) + " di " + intv.length;
+  }
   function setDiaryTab(t) {
     dTab = t; document.querySelectorAll("[data-dt]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.dt === t ? "true" : "false"); });
-    $("d-page").hidden = t !== "koki"; $("o-page").hidden = t !== "oss"; $("o-traits").hidden = t !== "oss";
-    $("d-title").textContent = t === "koki" ? "Il diario di Kōki" : "Il quaderno dell'osservatore";
+    $("d-page").hidden = t !== "koki"; $("o-page").hidden = t !== "oss"; $("o-traits").hidden = t !== "oss"; $("i-page").hidden = t !== "int";
+    $("d-title").textContent = t === "koki" ? "Il diario di Kōki" : t === "oss" ? "Il quaderno dell'osservatore" : "Le interviste della domenica";
     if (t === "koki") renderDiary();
+    else if (t === "int") { if (DEMO) { intv = []; renderInterviews(); } else api("/api/interviste").then(function (d) { intv = d; iIdx = 0; renderInterviews(); }).catch(function () {}); }
     else if (DEMO) { quad = { pagine: [], trattiNuovi: [] }; renderObserver(); }
     else api("/api/quaderno").then(function (d) { quad = d; qIdx = 0; renderObserver(); }).catch(function () {});
   }
   document.querySelectorAll("[data-dt]").forEach(function (b) { b.addEventListener("click", function () { setDiaryTab(b.dataset.dt); }); });
-  $("d-prev").onclick = function () { if (dTab === "oss") { if (qIdx < quad.pagine.length - 1) { qIdx++; renderObserver(); } } else if (dIdx < diary.length - 1) { dIdx++; renderDiary(); } };
-  $("d-next").onclick = function () { if (dTab === "oss") { if (qIdx > 0) { qIdx--; renderObserver(); } } else if (dIdx > 0) { dIdx--; renderDiary(); } };
+  $("d-prev").onclick = function () { if (dTab === "int") { if (iIdx < intv.length - 1) { iIdx++; renderInterviews(); } } else if (dTab === "oss") { if (qIdx < quad.pagine.length - 1) { qIdx++; renderObserver(); } } else if (dIdx < diary.length - 1) { dIdx++; renderDiary(); } };
+  $("d-next").onclick = function () { if (dTab === "int") { if (iIdx > 0) { iIdx--; renderInterviews(); } } else if (dTab === "oss") { if (qIdx > 0) { qIdx--; renderObserver(); } } else if (dIdx > 0) { dIdx--; renderDiary(); } };
 
   // ---------- laboratorio ----------
   Object.keys(PLACE_NAME).forEach(function (k) { var o = document.createElement("option"); o.value = k; o.textContent = "Dove: " + PLACE_NAME[k]; $("l-where").appendChild(o); });
@@ -1588,6 +1603,11 @@
     api("/api/laboratorio", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ testo: tx, luogo: $("l-where").value }) }).then(function (r) {
       $("l-state").textContent = r.ok ? "Fatto: " + r.registro : (r.errore || "Non è successo niente."); if (r.ok) $("l-text").value = ""; renderLab(); refresh();
     }).catch(function () { $("l-state").textContent = "Non è riuscito."; }).then(function () { $("l-send").disabled = false; });
+  });
+  $("r-go").addEventListener("click", function () {
+    if ($("r-in").value.trim() !== "RINASCI") { $("l-state").textContent = "Scrivi RINASCI (tutto maiuscolo) per confermare."; return; }
+    if (DEMO) return;
+    api("/api/rinasci?conferma=RINASCI", { method: "POST" }).then(function (r) { if (r.ok) { $("r-in").value = ""; $("l-state").textContent = "Kōki è rinato. Si sveglia nella sua casetta, senza ricordi."; diary = []; IMG = {}; hangKey = "x"; renderLab(); refresh(); } }).catch(function () { $("l-state").textContent = "Non è riuscito."; });
   });
   function exportText() { return fetch("/api/esporta", { headers: { "x-koki-key": KEY } }).then(function (r) { if (!r.ok) throw new Error(); return r.text(); }); }
   $("l-export").addEventListener("click", function () {

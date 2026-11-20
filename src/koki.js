@@ -5,7 +5,7 @@
 
 import { DurableObject } from "cloudflare:workers";
 import { PLACES, CAT_SPOTS, TELESCOPE_PARTS, ACTIONS, FORME, dist, season, weatherWords, isRainy, localTime, pick, a as al } from "./world.js";
-import { decisionPrompt, reflectionPrompt, diaryPrompt, chatPrompt, narratorPrompt, lookPrompt, observerPrompt, stimulusPrompt, CORE, askModel, fallbackDecide } from "./mind.js";
+import { decisionPrompt, reflectionPrompt, diaryPrompt, chatPrompt, narratorPrompt, lookPrompt, observerPrompt, stimulusPrompt, dreamPrompt, interviewPrompt, DOMANDE, feelPlace, CORE, askModel, fallbackDecide } from "./mind.js";
 
 const H = 3600000, MIN = 60000;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -26,9 +26,12 @@ export class Koki extends DurableObject {
       CREATE TABLE IF NOT EXISTS quaderno (giorno TEXT PRIMARY KEY, t INTEGER, testo TEXT, tratti TEXT, domanda TEXT, numeri TEXT);
       CREATE TABLE IF NOT EXISTS tratti_nuovi (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT UNIQUE, prove INTEGER, primo TEXT, ultimo TEXT, fatti TEXT);
       CREATE TABLE IF NOT EXISTS interventi (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, testo TEXT, luogo TEXT, registro TEXT);
+      CREATE TABLE IF NOT EXISTS sogni (giorno TEXT PRIMARY KEY, t INTEGER, sogno TEXT, frammento TEXT);
+      CREATE TABLE IF NOT EXISTS interviste (giorno TEXT PRIMARY KEY, t INTEGER, risposte TEXT);
       CREATE TABLE IF NOT EXISTS umori (t INTEGER, umore REAL, luogo TEXT);
       CREATE TABLE IF NOT EXISTS oggetti (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, luogo TEXT, nome TEXT, descrizione TEXT, forma TEXT, colore TEXT, grandezza TEXT, rotto INTEGER DEFAULT 0, slot INTEGER);
     `);
+    try { this.sql.exec("ALTER TABLE aperti ADD COLUMN forza REAL DEFAULT 0.5"); } catch (e) { /* c'è già */ }
   }
 
   speed() { return parseFloat(this.env.SPEED) || 1; } // solo per le prove: accelera il tempo delle azioni
@@ -47,7 +50,8 @@ export class Koki extends DurableObject {
         novita: ["Ti sei appena svegliato per la prima volta, nella tua casetta. Non conosci ancora niente dell'isola."],
         urgente: false, inventario: [], sa: { telescopio: false }, gattoVisto: null,
         scheda: { abitudini: [], gusti: [] }, ai: { giorno: "", chiamate: 0 },
-        ultimaRiflessione: now, ultimoDiario: "", eraNotte: null, meteo: null
+        ultimaRiflessione: now, ultimoDiario: "", eraNotte: null, meteo: null,
+        coraggio: 0, luoghiEmo: {}, nomi: {}, osservati: []
       };
       this.put("S", S);
       this.logga(now, "evento", "Kōki è nato.");
@@ -82,14 +86,16 @@ export class Koki extends DurableObject {
     this.sql.exec("DELETE FROM log WHERE id <= (SELECT MAX(id) - 300 FROM log)");
   }
   aggiungiAperti(t, list) {
-    const open = this.sql.exec("SELECT testo FROM aperti WHERE chiuso = 0").toArray().map((r) => r.testo.toLowerCase());
+    const open = this.sql.exec("SELECT id, testo FROM aperti WHERE chiuso = 0").toArray();
     for (const p of (list || []).slice(0, 2)) {
-      if (!p || !p.testo || open.includes(p.testo.toLowerCase())) continue;
-      this.sql.exec("INSERT INTO aperti (t, tipo, testo) VALUES (?, ?, ?)", t, p.tipo || "desiderio", p.testo.slice(0, 200));
+      if (!p || !p.testo) continue;
+      const k = p.testo.toLowerCase(), same = open.find((o) => o.testo.toLowerCase() === k);
+      if (same) { this.sql.exec("UPDATE aperti SET forza = MIN(1, forza + 0.2) WHERE id = ?", same.id); continue; } // ci ripensa: si rafforza
+      this.sql.exec("INSERT INTO aperti (t, tipo, testo, forza) VALUES (?, ?, ?, 0.5)", t, p.tipo || "desiderio", p.testo.slice(0, 200));
       this.logga(t, "aperto", `${p.tipo}: ${p.testo}`);
     }
-    // non più di 8 pensieri aperti: chiude i più vecchi
-    this.sql.exec("UPDATE aperti SET chiuso = 2 WHERE chiuso = 0 AND id NOT IN (SELECT id FROM aperti WHERE chiuso = 0 ORDER BY id DESC LIMIT 8)");
+    // non più di 8 pensieri aperti: dimentica i più deboli
+    this.sql.exec("UPDATE aperti SET chiuso = 2 WHERE chiuso = 0 AND id NOT IN (SELECT id FROM aperti WHERE chiuso = 0 ORDER BY forza DESC, id DESC LIMIT 8)");
   }
   ricordiRilevanti(S, n) {
     const rows = this.sql.exec("SELECT id, t, testo, forza, tipo, luogo FROM memorie ORDER BY id DESC LIMIT 80").toArray();
@@ -98,6 +104,9 @@ export class Koki extends DurableObject {
     return rows.sort((a, b) => b.score - a.score).slice(0, n).sort((a, b) => a.t - b.t);
   }
   pulisciMemoria() {
+    // i pensieri a cui non ripensa sbiadiscono, e alla fine li dimentica
+    this.sql.exec("UPDATE aperti SET forza = forza * 0.93 WHERE chiuso = 0");
+    for (const a of this.sql.exec("SELECT id, testo FROM aperti WHERE chiuso = 0 AND forza < 0.12").toArray()) { this.sql.exec("UPDATE aperti SET chiuso = 3 WHERE id = ?", a.id); this.logga(Date.now(), "dimenticato", a.testo); }
     this.sql.exec("UPDATE memorie SET forza = forza * 0.97 WHERE tipo = 'breve'");
     this.sql.exec("DELETE FROM memorie WHERE tipo = 'breve' AND id NOT IN (SELECT id FROM memorie WHERE tipo = 'breve' ORDER BY forza DESC, id DESC LIMIT 40)");
     this.sql.exec("DELETE FROM memorie WHERE tipo = 'lunga' AND id NOT IN (SELECT id FROM memorie WHERE tipo = 'lunga' ORDER BY forza DESC, id DESC LIMIT 100)");
@@ -162,11 +171,14 @@ export class Koki extends DurableObject {
   // ---------- il corpo: numeri, nessun modello ----------
   corpo(S, T, dtH) {
     const b = S.corpo;
-    if (S.dorme) b.energia += .13 * dtH; else b.energia -= .05 * dtH;
+    if (S.dorme) b.energia += .13 * dtH; else b.energia -= .04 * dtH;
     if (!S.dorme) { b.curiosita += .09 * dtH; b.espressione += .05 * dtH; b.socialita += .03 * dtH; }
     const fuori = !PLACES[S.luogo].coperto;
-    const target = !T.notte || S.dorme ? 0 : fuori ? .55 : .12;
+    const cor = S.coraggio || 0;
+    const target = !T.notte || S.dorme ? 0 : fuori ? .55 * (1 - cor * .8) : .12 * (1 - cor);
     b.paura += (target - b.paura) * Math.min(1, dtH * 3);
+    // il coraggio cresce piano se resta fuori al buio senza scappare (abitudine)
+    if (T.notte && fuori && !S.dorme) S.coraggio = clamp(cor + .015 * dtH, 0, 1);
     for (const k of Object.keys(b)) b[k] = clamp(b[k], 0, 1);
     const base = .25 - b.paura * .4 - (b.energia < .25 ? .2 : 0) - (b.socialita > .75 ? .15 : 0) - (T.pioggia && fuori ? .1 : 0);
     S.umore = clamp(S.umore + (base - S.umore) * Math.min(1, dtH * .3), -1, 1);
@@ -192,8 +204,9 @@ export class Koki extends DurableObject {
     if (az === "leggi_bottiglia") { if (!W.bottiglia) return false; if (needs("spiaggia")) return true; }
     if (az === "guarda_stelle") m = { ...m, azione: "osserva", oggetto: T.notte ? "le stelle" : "il cielo" };
     if (az === "libera" && ogg.length < 4) return false;
-    if (az === "dormi") { S.dorme = true; min = 8 * 60; }
-    S.attivita = { azione: m.azione, oggetto: m.oggetto ? String(m.oggetto).trim() : ogg, luogo: S.luogo, inizio: now, fine: now + min * MIN / this.speed(), perche: m.perche || "" };
+    if (az === "dormi" && T.ora24 >= 6 && T.ora24 < 23.5 && S.corpo.energia >= .15) { m = { ...m, azione: "riposa", oggetto: "un pisolino" }; min = Math.min(min, 30); }
+    else if (az === "dormi") { S.dorme = true; S.addormentato = now; min = 8 * 60; }
+    S.attivita = { azione: m.azione, oggetto: m.oggetto ? String(m.oggetto).trim() : ogg, luogo: S.luogo, inizio: now, fine: now + min * MIN / this.speed(), perche: m.perche || "", u0: S.umore };
     this.logga(now, "azione", `${this.descriviAzione(S.attivita)}. ${m.perche || ""}`);
     return true;
   }
@@ -245,9 +258,9 @@ export class Koki extends DurableObject {
         else if (/stell|cielo|luna/.test(ogg) && T.notte) {
           // le stelle: il suo amore, e il suo buio
           if (T.nuvole > 60 || T.pioggia) { d = "Il cielo è coperto: stanotte non si vede neanche una stella."; S.umore -= .05; }
-          else if (b.paura > .5 && !PLACES[S.luogo].coperto && Math.random() < .35) { d = "Ho alzato gli occhi verso le stelle, ma il buio intorno mi ha fatto troppa paura e sono scappato."; S.umore -= .1; forza = .6; }
+          else if (b.paura > .4 && !PLACES[S.luogo].coperto && Math.random() < .35 * (1 - (S.coraggio || 0))) { d = "Ho alzato gli occhi verso le stelle, ma il buio intorno mi ha fatto troppa paura e sono scappato."; S.umore -= .1; forza = .6; S.coraggio = clamp((S.coraggio || 0) - .04, 0, 1); }
           else if (W.telescopio.aggiustato && S.luogo === "collina") { d = "Nel telescopio le stelle sono enormi e brillano di colori diversi."; S.umore += .25; forza = .7; }
-          else { d = null; S.umore += .2; forza = .6; S.stelleViste = (S.stelleViste || 0) + 1; }
+          else { d = null; S.umore += .2; forza = .6; S.stelleViste = (S.stelleViste || 0) + 1; if (!PLACES[S.luogo].coperto) S.coraggio = clamp((S.coraggio || 0) + .03, 0, 1); }
         }
         if (!d && this.oggettoQui(S, ogg)) { const o = this.oggettoQui(S, ogg); if (!gia.length) { d = `${o.nome}: ${o.descrizione}${o.rotto ? " È rotto." : ""}`; forza = .5; } }
         if (!d && S.luogo === "lanterna" && T.notte && W.lanterna && !gia.length) d = "La lanterna di pietra è accesa! Dentro c'è una fiammella, ma qui non c'è nessuno.";
@@ -427,7 +440,7 @@ export class Koki extends DurableObject {
       ora: T.ora, ora24: T.ora24, stagione: T.stagione, meteo: T.meteo, notte: T.notte, novita: S.novita.slice(-6),
       ricordi: this.ricordiRilevanti(S, 6),
       convinzioni: this.sql.exec("SELECT id, testo, prove FROM convinzioni ORDER BY prove DESC, id DESC LIMIT 5").toArray(),
-      aperti: this.sql.exec("SELECT id, tipo, testo FROM aperti WHERE chiuso = 0 ORDER BY id DESC LIMIT 5").toArray(),
+      aperti: this.sql.exec("SELECT id, tipo, testo FROM aperti WHERE chiuso = 0 ORDER BY forza DESC, id DESC LIMIT 5").toArray(),
       oggettiQui: this.sql.exec("SELECT id, nome, descrizione, rotto FROM oggetti WHERE luogo = ? ORDER BY id DESC LIMIT 8", S.luogo).toArray(),
       attivita: this.descriviAzione(S.attivita),
       osservati: this.riassuntoOsservati(S),
@@ -459,6 +472,14 @@ export class Koki extends DurableObject {
     this.logga(now, "pensiero", S.pensiero);
     if (r.nuovi_pensieri) this.aggiungiAperti(now, r.nuovi_pensieri);
     if (Array.isArray(r.risolti)) for (const id of r.risolti.slice(0, 3)) this.sql.exec("UPDATE aperti SET chiuso = 1 WHERE id = ?", id);
+    if (Array.isArray(r.ripensati)) for (const id of r.ripensati.slice(0, 3)) this.sql.exec("UPDATE aperti SET forza = MIN(1, forza + 0.15) WHERE id = ? AND chiuso = 0", id);
+    if (Array.isArray(r.nomi)) for (const n of r.nomi.slice(0, 2)) {
+      const cosa = String(n.cosa || "").trim().toLowerCase().slice(0, 60), nome = String(n.nome || "").trim().slice(0, 40);
+      if (cosa.length < 2 || nome.length < 2 || (S.nomi || {})[cosa] === nome) continue;
+      S.nomi = S.nomi || {}; S.nomi[cosa] = nome;
+      const ks = Object.keys(S.nomi); if (ks.length > 30) delete S.nomi[ks[0]];
+      this.logga(now, "nome", `Ha dato un nome: ${cosa} → «${nome}».`);
+    }
     S.coda = r.mosse.slice(0, 3).filter((m) => m && ACTIONS[m.azione]);
     S.novita = []; S.esito = ""; S.urgente = false;
     while (S.coda.length && !S.attivita) {
@@ -475,7 +496,7 @@ export class Koki extends DurableObject {
     const ctx = {
       recenti: this.sql.exec("SELECT id, testo FROM memorie WHERE tipo = 'breve' ORDER BY id DESC LIMIT 15").toArray().reverse(),
       convinzioni: this.sql.exec("SELECT id, testo, prove FROM convinzioni ORDER BY prove DESC LIMIT 12").toArray(),
-      aperti: this.sql.exec("SELECT id, tipo, testo FROM aperti WHERE chiuso = 0 ORDER BY id DESC LIMIT 6").toArray()
+      aperti: this.sql.exec("SELECT id, tipo, testo FROM aperti WHERE chiuso = 0 ORDER BY forza DESC, id DESC LIMIT 6").toArray()
     };
     try {
       const r = await askModel(this.env, reflectionPrompt(S, ctx), 450);
@@ -493,6 +514,8 @@ export class Koki extends DurableObject {
     const giorno = localTime(now - 6 * H, this.env.TIMEZONE || "Europe/Rome").giorno; // dopo mezzanotte conta ancora come "ieri"
     if (S.ultimoDiario === giorno) return;
     S.ultimoDiario = giorno;
+    const domenica = new Date(giorno + "T12:00:00Z").getUTCDay() === 0;
+    const intervista = domenica ? await this.intervista(S, T, now, giorno) : null;
     const da = now - 18 * H;
     const ctx = {
       ora: T.ora,
@@ -516,11 +539,47 @@ export class Koki extends DurableObject {
     if (!testo) testo = "Oggi:\n" + ctx.oggi.slice(-8).map((m) => "- " + m.testo).join("\n");
     this.sql.exec("INSERT INTO diario (giorno, t, testo) VALUES (?, ?, ?) ON CONFLICT(giorno) DO UPDATE SET testo = excluded.testo, t = excluded.t", giorno, now, testo.slice(0, 4000));
     this.logga(now, "diario", "Ha scritto la pagina di diario del " + giorno + ".");
-    await this.osserva(S, T, now, giorno, testo);
+    await this.osserva(S, T, now, giorno, testo, intervista);
+  }
+
+  // l'emozione dei luoghi: media di come cambia il suo umore quando fa qualcosa lì
+  sentiLuogo(S, luogo, delta) {
+    if (!PLACES[luogo] || !isFinite(delta)) return;
+    S.luoghiEmo = S.luoghiEmo || {};
+    const e = S.luoghiEmo[luogo] || { v: 0, n: 0 };
+    e.v = Math.round((e.v * .8 + clamp(delta, -.5, .5) * .2) * 1000) / 1000; e.n++;
+    S.luoghiEmo[luogo] = e;
+  }
+
+  // il sogno: al risveglio gli resta un frammento
+  async sogna(S, T, now) {
+    const giorno = localTime(now - 12 * H, this.env.TIMEZONE || "Europe/Rome").giorno;
+    if (this.sql.exec("SELECT COUNT(*) AS n FROM sogni WHERE giorno = ?", giorno).one().n) return;
+    const ricordi = this.sql.exec("SELECT testo FROM memorie WHERE t > ? ORDER BY RANDOM() LIMIT 8", now - 30 * H).toArray();
+    if (ricordi.length < 2 || !this.budget(S, T)) return;
+    try {
+      const r = await askModel(this.env, dreamPrompt(S, ricordi), 300);
+      if (!r || !r.sogno) return;
+      this.sql.exec("INSERT OR REPLACE INTO sogni (giorno, t, sogno, frammento) VALUES (?, ?, ?, ?)", giorno, now, String(r.sogno).slice(0, 800), String(r.frammento || "").slice(0, 200));
+      if (r.frammento) { S.novita.push(`Ti ricordi un pezzo del sogno di stanotte: «${r.frammento}».`); this.ricorda(now, `Stanotte ho sognato: ${r.frammento}`, .4, "casa"); }
+      this.logga(now, "sogno", r.sogno);
+    } catch (e) { this.logga(now, "errore", "Il sogno non è riuscito: " + String(e && e.message || e).slice(0, 160)); }
+  }
+
+  // l'intervista della domenica sera: sempre le stesse domande
+  async intervista(S, T, now, giorno) {
+    if (this.sql.exec("SELECT COUNT(*) AS n FROM interviste WHERE giorno = ?", giorno).one().n || !this.budget(S, T, 20)) return null;
+    try {
+      const r = await askModel(this.env, interviewPrompt(S, { ora: T.ora, ricordi: this.ricordiRilevanti(S, 8) }), 600);
+      const risposte = DOMANDE.map((d, i) => ({ domanda: d, risposta: String((r.risposte || [])[i] || "").slice(0, 400) }));
+      this.sql.exec("INSERT OR REPLACE INTO interviste (giorno, t, risposte) VALUES (?, ?, ?)", giorno, now, JSON.stringify(risposte));
+      this.logga(now, "intervista", "Ha risposto all'intervista della settimana.");
+      return risposte.map((x) => `${x.domanda} ${x.risposta}`).join("\n");
+    } catch (e) { this.logga(now, "errore", "Intervista non riuscita: " + String(e && e.message || e).slice(0, 160)); return null; }
   }
 
   // ---------- il quaderno dell'osservatore ----------
-  async osserva(S, T, now, giorno, diarioKoki) {
+  async osserva(S, T, now, giorno, diarioKoki, intervista) {
     const da = now - 20 * H, tz = this.env.TIMEZONE || "Europe/Rome";
     const righe = this.sql.exec("SELECT t, tipo, testo FROM log WHERE t > ? AND tipo NOT IN ('errore', 'laboratorio') ORDER BY id", da).toArray();
     const cronaca = righe.slice(-70).map((l) => ({ ora: localTime(l.t, tz).testo.split(" ").pop(), tipo: l.tipo, testo: l.testo.slice(0, 220) }));
@@ -534,6 +593,7 @@ export class Koki extends DurableObject {
       osservazioni: righe.filter((l) => l.tipo === "azione" && /^osserva/.test(l.testo)).length,
       ricerche: righe.filter((l) => l.tipo === "azione" && /^cerca/.test(l.testo)).length,
       disegni: righe.filter((l) => l.tipo === "disegno").length,
+      coraggio: Math.round((S.coraggio || 0) * 100) / 100,
       pensieri: righe.filter((l) => l.tipo === "pensiero").length
     };
     const ctx = {
@@ -542,6 +602,11 @@ export class Koki extends DurableObject {
       umore: numeri.umore == null ? "sconosciuto" : numeri.umore,
       interventi: this.sql.exec("SELECT testo, registro FROM interventi WHERE t > ?", da).toArray().map((i) => `${i.testo} → ${i.registro}`),
       diarioKoki: diarioKoki || "",
+      intervista: intervista || "",
+      sogno: (this.sql.exec("SELECT sogno FROM sogni WHERE giorno < ? ORDER BY giorno DESC LIMIT 1", giorno).toArray()[0] || {}).sogno || "",
+      coraggio: Math.round((S.coraggio || 0) * 100) / 100,
+      luoghiEmo: Object.entries(S.luoghiEmo || {}).filter(([, e]) => e.n >= 3).map(([k, e]) => `${PLACES[k] ? PLACES[k].nome : k} ${e.v > 0 ? "+" : ""}${e.v} (${e.n} volte)`),
+      nomi: Object.entries(S.nomi || {}).map(([c, n]) => `${c} = «${n}»`),
       precedenti: this.sql.exec("SELECT giorno, testo FROM quaderno WHERE giorno < ? ORDER BY giorno DESC LIMIT 3", giorno).toArray().reverse(),
       trattiNuovi: this.sql.exec("SELECT nome, prove FROM tratti_nuovi ORDER BY prove DESC LIMIT 10").toArray()
     };
@@ -598,6 +663,10 @@ export class Koki extends DurableObject {
       "## Tratti di partenza", ...CORE.map((c) => "- " + c), "",
       "## Come si descrive lui", "Abitudini: " + (S.scheda.abitudini.join("; ") || "nessuna"), "Gusti: " + (S.scheda.gusti.join("; ") || "nessuno"), "",
       "## Tratti nuovi ipotizzati dall'osservatore", ...this.sql.exec("SELECT nome, prove, primo, ultimo, fatti FROM tratti_nuovi ORDER BY prove DESC").toArray().map((t) => `- ${t.nome} (notato ${t.prove} giorni, dal ${t.primo} al ${t.ultimo}): ${JSON.parse(t.fatti || "[]").join(" | ")}`), "",
+      "## Coraggio al buio", String(Math.round((S.coraggio || 0) * 100) / 100), "",
+      "## Come si sente nei luoghi", ...Object.entries(S.luoghiEmo || {}).map(([k, e]) => `- ${PLACES[k] ? PLACES[k].nome : k}: ${e.v} (${e.n} volte)`), "",
+      "## Nomi inventati da Kōki", ...Object.entries(S.nomi || {}).map(([c, n]) => `- ${c} = «${n}»`), "",
+      "## Interviste della domenica", ...this.sql.exec("SELECT giorno, risposte FROM interviste ORDER BY giorno").toArray().map((i) => `### ${i.giorno}\n` + JSON.parse(i.risposte || "[]").map((x) => `- ${x.domanda} ${x.risposta}`).join("\n")), "",
       "## Convinzioni", ...this.sql.exec("SELECT testo, prove FROM convinzioni ORDER BY prove DESC").toArray().map((c) => `- ${c.testo} (${c.prove})`), "",
       "## Pensieri aperti", ...this.sql.exec("SELECT tipo, testo FROM aperti WHERE chiuso = 0").toArray().map((a) => `- ${a.tipo}: ${a.testo}`), "",
       "## Collezione", S.inventario.join(", ") || "niente", "",
@@ -606,12 +675,14 @@ export class Koki extends DurableObject {
       "## Interventi dello sperimentatore", ...this.sql.exec("SELECT t, testo, luogo, registro FROM interventi ORDER BY id").toArray().map((i) => `- ${d(i.t)} (${i.luogo}): ${i.testo} → ${i.registro}`), ""];
     const quad = this.sql.exec("SELECT giorno, testo, tratti, domanda, numeri FROM quaderno ORDER BY giorno").toArray();
     const diar = Object.fromEntries(this.sql.exec("SELECT giorno, testo FROM diario").toArray().map((x) => [x.giorno, x.testo]));
+    const sog = Object.fromEntries(this.sql.exec("SELECT giorno, sogno FROM sogni").toArray().map((x) => [x.giorno, x.sogno]));
     const giorni = [...new Set(quad.map((q) => q.giorno).concat(Object.keys(diar)))].sort().slice(-60);
     out.push("## Giorno per giorno");
     for (const g of giorni) {
       const q = quad.find((x) => x.giorno === g);
       out.push("", `### ${g}`);
       if (diar[g]) out.push("**Diario di Kōki:**", diar[g]);
+      if (sog[g]) out.push("**Sogno della notte:**", sog[g]);
       if (q) {
         out.push("**Quaderno dell'osservatore:**", q.testo);
         const tr = JSON.parse(q.tratti || "[]"); if (tr.length) out.push(...tr.map((t) => `- ${t.tratto}: ${t.come}`));
@@ -635,21 +706,33 @@ export class Koki extends DurableObject {
     if (!S.dorme) { this.sql.exec("INSERT INTO umori (t, umore, luogo) VALUES (?, ?, ?)", now, S.umore, S.luogo); this.sql.exec("DELETE FROM umori WHERE t < ?", now - 120 * 24 * H); }
 
     if (S.dorme) {
-      if (!T.notte && T.ora24 >= 6.5 && S.corpo.energia > .7) {
+      if (T.ora24 >= 6 && T.ora24 < 23.5 && S.corpo.energia > (T.ora24 < 13 ? .45 : .6)) {
         S.dorme = false; S.attivita = null; S.coda = [];
         S.novita.push(`Ti sei appena svegliato. Fuori: ${T.meteo}.`);
         this.logga(now, "evento", "Kōki si è svegliato.");
+        if (T.ora24 < 13 && now - (S.addormentato || 0) > 3 * H) await this.sogna(S, T, now);
       } else { this.put("S", S); this.put("W", W); return; }
     }
 
     if (S.attivita && S.attivita.azione === "cerca" && now < S.attivita.fine && now - (S.attivita.ultimoTentativo || S.attivita.inizio) > 6 * MIN / this.speed()) this.tentaRicerca(S, W, now);
     let serveMente = false;
+    // dopo mezzanotte gli si chiudono gli occhi: torna a casa a dormire (fino alle 6)
+    const versoLetto = (S.attivita && S.attivita.azione === "dormi") || (S.coda[0] && S.coda[0].azione === "dormi");
+    if (!S.dorme && T.ora24 < 6 && !versoLetto) {
+      S.attivita = null; S.coda = [{ azione: "dormi", minuti: 60, perche: "è tardissimo, mi si chiudono gli occhi" }];
+      this.logga(now, "evento", "È mezzanotte passata: Kōki ha sonno.");
+    }
     // stanchissimo: crolla dal sonno, senza bisogno di pensarci
     if (S.corpo.energia < .1 && !S.dorme && !(S.attivita && S.attivita.azione === "dormi") && !(S.coda[0] && S.coda[0].azione === "dormi")) {
       S.attivita = null; S.coda = [{ azione: "dormi", minuti: 60, perche: "non ce la faccio più, mi si chiudono gli occhi" }];
       this.logga(now, "evento", "Kōki è stanchissimo.");
     }
-    if (S.attivita && now >= S.attivita.fine) { if (S.attivita.azione === "libera") await this.narra(S, W, T, now); else await this.concludi(S, W, T, now); S.attivita = null; }
+    if (S.attivita && now >= S.attivita.fine) {
+      const fatta = S.attivita;
+      if (fatta.azione === "libera") await this.narra(S, W, T, now); else await this.concludi(S, W, T, now);
+      if (fatta.azione !== "vai" && fatta.u0 != null) this.sentiLuogo(S, fatta.luogo || S.luogo, S.umore - fatta.u0);
+      S.attivita = null;
+    }
     if (S.urgente && S.attivita) { S.attivita = null; S.coda = []; }
     if (!S.attivita) {
       while (S.coda.length && !S.attivita && !S.urgente) { const m = S.coda.shift(); this.avvia(S, W, m, now, T); }
@@ -671,10 +754,11 @@ export class Koki extends DurableObject {
       koki: {
         luogo: S.luogo, dorme: S.dorme, attivita: S.attivita, descrizione: S.dorme ? "dorme" : this.descriviAzione(S.attivita),
         coda: S.coda, pensiero: S.pensiero, fontePensiero: S.fontePensiero || "", umore: S.umore, corpo: S.corpo,
-        inventario: S.inventario, scheda: S.scheda, nato: S.nato
+        inventario: S.inventario, scheda: S.scheda, nato: S.nato, coraggio: S.coraggio || 0, nomi: S.nomi || {},
+        luoghi: Object.fromEntries(Object.keys(PLACES).map((k) => [k, feelPlace(S, k)]).filter(([, f]) => f))
       },
       mondo: { gatto: W.gatto, lanterna: !!W.lanterna, impronte: W.impronte, bottiglia: !!W.bottiglia, bottigliaInViaggio: !!W.bottigliaInArrivo, telescopio: W.telescopio },
-      aperti: this.sql.exec("SELECT id, tipo, testo, t FROM aperti WHERE chiuso = 0 ORDER BY id DESC").toArray(),
+      aperti: this.sql.exec("SELECT id, tipo, testo, t, forza FROM aperti WHERE chiuso = 0 ORDER BY forza DESC, id DESC").toArray(),
       convinzioni: this.sql.exec("SELECT testo, prove FROM convinzioni ORDER BY prove DESC LIMIT 12").toArray(),
       opere: this.sql.exec("SELECT o.id, o.t, o.tipo, o.titolo, (i.opera IS NOT NULL) AS immagine FROM opere o LEFT JOIN immagini i ON i.opera = o.id ORDER BY o.id DESC LIMIT 60").toArray(),
       oggetti: this.sql.exec("SELECT id, t, luogo, nome, descrizione, forma, colore, grandezza, rotto, slot FROM oggetti ORDER BY id").toArray(),
@@ -690,7 +774,12 @@ export class Koki extends DurableObject {
     const p = url.pathname;
     if (p === "/api/_sveglia") return json({ ok: true });
     if (p === "/api/stato") return json(this.vista());
-    if (p === "/api/diario") return json(this.sql.exec("SELECT giorno, testo FROM diario ORDER BY giorno DESC LIMIT 120").toArray());
+    if (p === "/api/diario") {
+      const d = this.sql.exec("SELECT giorno, testo FROM diario").toArray(), so = this.sql.exec("SELECT giorno, sogno FROM sogni").toArray();
+      const by = {}; d.forEach((x) => { by[x.giorno] = { giorno: x.giorno, testo: x.testo }; }); so.forEach((x) => { (by[x.giorno] = by[x.giorno] || { giorno: x.giorno, testo: "" }).sogno = x.sogno; });
+      return json(Object.values(by).sort((a, b) => b.giorno.localeCompare(a.giorno)).slice(0, 120));
+    }
+    if (p === "/api/interviste") return json(this.sql.exec("SELECT giorno, risposte FROM interviste ORDER BY giorno DESC LIMIT 60").toArray().map((i) => ({ giorno: i.giorno, risposte: JSON.parse(i.risposte || "[]") })));
     if (p === "/api/disegno") { const r = this.sql.exec("SELECT mime, dati FROM immagini WHERE opera = ?", parseInt(url.searchParams.get("id"), 10) || 0).toArray()[0]; return r ? json(r) : json({ errore: "Nessuna immagine" }, 404); }
     if (p === "/api/ricordi") return json(this.sql.exec("SELECT t, testo, forza, tipo, luogo FROM memorie ORDER BY id DESC LIMIT 140").toArray());
     if (p === "/api/quaderno") return json({
@@ -710,6 +799,8 @@ export class Koki extends DurableObject {
       const { S } = this.init(now), T = this.tempo(S, now), cosa = url.searchParams.get("cosa");
       if (cosa === "riflessione") await this.rifletti(S, T, now);
       if (cosa === "diario") { S.ultimoDiario = ""; await this.scriviDiario(S, T, now); }
+      if (cosa === "sogno") { this.sql.exec("DELETE FROM sogni"); await this.sogna(S, T, now); }
+      if (cosa === "intervista") { const g = localTime(now, this.env.TIMEZONE || "Europe/Rome").giorno; this.sql.exec("DELETE FROM interviste WHERE giorno = ?", g); await this.intervista(S, T, now, g); }
       this.put("S", S); return json({ ok: true });
     }
     if (p === "/api/bottiglia" && req.method === "POST") {
@@ -721,6 +812,7 @@ export class Koki extends DurableObject {
       W.bottigliaInArrivo = testo; W.arrivo = now + (20 + Math.random() * 100) * MIN;
       this.put("W", W);
       this.logga(now, "mondo", "Qualcuno ha affidato una bottiglia al mare.");
+      this.sql.exec("INSERT INTO interventi (t, testo, luogo, registro) VALUES (?, ?, 'spiaggia', ?)", now, "Bottiglia: «" + testo + "»", "Una bottiglia con un messaggio arriverà sulla spiaggia.");
       return json({ ok: true, arrivoTra: Math.round((W.arrivo - now) / MIN) });
     }
     if (p === "/api/parla" && req.method === "POST") {
@@ -736,13 +828,14 @@ export class Koki extends DurableObject {
       catch (e) { this.put("S", S); return json({ risposta: "(Kōki ti guarda, ma non trova le parole.)", errore: String(e && e.message || e) }); }
       this.ricorda(now, `Il Custode mi ha detto: «${msg}». Gli ho risposto: «${r.risposta}»`, .65, S.luogo);
       this.logga(now, "parla", `Custode: ${msg}\nKōki: ${r.risposta}`);
+      this.sql.exec("INSERT INTO interventi (t, testo, luogo, registro) VALUES (?, ?, ?, ?)", now, "Parla: «" + msg + "»", S.luogo, "Kōki ha risposto: «" + String(r.risposta).slice(0, 200) + "»");
       S.corpo.socialita = clamp(S.corpo.socialita - .35, 0, 1); S.umore = clamp(S.umore + .1, -1, 1);
       S.novita.push(`Il Custode ti ha parlato: «${msg}».`);
       this.put("S", S);
       return json({ risposta: r.risposta, pensiero: r.pensiero || "" });
     }
     if (p === "/api/rinasci" && req.method === "POST" && url.searchParams.get("conferma") === "RINASCI") {
-      this.sql.exec("DELETE FROM stato; DELETE FROM memorie; DELETE FROM convinzioni; DELETE FROM aperti; DELETE FROM diario; DELETE FROM opere; DELETE FROM log; DELETE FROM oggetti; DELETE FROM immagini; DELETE FROM quaderno; DELETE FROM tratti_nuovi; DELETE FROM interventi; DELETE FROM umori;");
+      this.sql.exec("DELETE FROM stato; DELETE FROM memorie; DELETE FROM convinzioni; DELETE FROM aperti; DELETE FROM diario; DELETE FROM opere; DELETE FROM log; DELETE FROM oggetti; DELETE FROM immagini; DELETE FROM quaderno; DELETE FROM tratti_nuovi; DELETE FROM interventi; DELETE FROM umori; DELETE FROM sogni; DELETE FROM interviste;");
       this.init(now);
       return json({ ok: true });
     }
