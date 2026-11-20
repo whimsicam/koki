@@ -22,6 +22,9 @@ Vive su **Cloudflare**, gratis e senza carta di credito. Pensa con **Workers AI*
 4. Quando va a dormire scrive la pagina di diario e cambia una piccola cosa di sé (un'abitudine o un gusto).
 5. Se il modello non risponde o finisce il budget del giorno (`MAX_AI_CALLS`), va avanti con regole semplici.
 
+### Azioni libere e il Mondo narratore
+Oltre alle azioni di base, Kōki può fare **qualsiasi cosa** descritta con le sue parole (azione `libera`). Una seconda mente, il **Mondo**, fa da narratore imparziale: decide cosa succede davvero (riesce, fallisce, imprevisti) e può cambiare l'isola. Crea cose nuove, ne rompe o ne toglie altre, consuma o aggiunge cose alla collezione. Le cose create restano (al massimo 40) e compaiono nell'isola 3D con una forma scelta da un kit low poly. Toccandole se ne legge la descrizione. Il Mondo usa il modello grande (`BIG_MODEL`, massimo `MAX_BIG_CALLS` al giorno), che a volte usa anche Kōki per decidere. I misteri dell'isola non vengono mai risolti dal Mondo.
+
 ### L'isola
 Metà cose normali e metà strane. Normali: la casa di Kōki, la piazzetta con la fontana, il laghetto col ponticello, il prato fiorito, l'orto, il bosco, il giardino giapponese, la spiaggia, il molo con la barca, il faro, il mulino, la balena. Strane: il telescopio rotto sulla collina (mancano lente, vite e manovella), la torre con l'orologio che va all'indietro, la casetta chiusa con la finestra accesa di notte, la lanterna di pietra che certe notti si accende da sola, il gatto di pietra che si sposta quando nessuno guarda, le impronte sulla spiaggia, la bottiglia col messaggio.
 

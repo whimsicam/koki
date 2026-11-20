@@ -102,8 +102,24 @@ export const ACTIONS = {
   guarda_stelle: "guarda_stelle: di notte, guardi il cielo stellato (serve coraggio, c'è buio)",
   aggiusta_telescopio: "aggiusta_telescopio: sulla collina, provi a montare i pezzi che hai trovato",
   leggi_bottiglia: "leggi_bottiglia: se c'è una bottiglia dove sei, la apri e leggi il messaggio",
-  sistema_collezione: "sistema_collezione: a casa, metti in ordine le cose che hai trovato"
+  sistema_collezione: "sistema_collezione: a casa, metti in ordine le cose che hai trovato",
+  libera: "libera <cosa fai, con parole tue>: qualunque altra cosa ti venga in mente di fare qui, anche strana o mai fatta prima"
 };
+
+// Le forme con cui il Mondo può mostrare nell'isola le cose che cambiano.
+export const FORME = ["mucchio", "buca", "pila_di_sassi", "cerchio_di_sassi", "palo", "cartello", "bandierina", "scultura", "aiuola",
+  "recinto", "capanna", "ponticello", "oggetto_appeso", "segno_a_terra", "scritta", "cumulo_di_foglie", "castello_di_sabbia",
+  "piccola_torre", "cesto", "nido", "falo_spento", "sentiero_di_sassi", "statuetta", "altro"];
+
+// I misteri dell'isola: il Mondo non li risolve mai.
+export const SEGRETI = [
+  "La casetta chiusa non si apre mai: né la porta, né le finestre. Non esiste una chiave sull'isola, per ora.",
+  "Nessuno vede mai il gatto di pietra muoversi: si sposta solo quando nessuno guarda.",
+  "La lanterna di pietra si accende da sola certe notti: non si sa chi o cosa la accenda.",
+  "Le impronte sulla spiaggia arrivano dal mare e ci tornano: non si scopre ancora di chi sono.",
+  "L'orologio della torre va all'indietro e non si può aggiustare.",
+  "I pezzi del telescopio (lente, vite, manovella) si trovano solo cercando nei posti giusti, non si possono costruire."
+];
 
 export function dist(a, b) {
   const pa = PLACES[a], pb = PLACES[b];

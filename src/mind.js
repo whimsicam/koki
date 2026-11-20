@@ -2,7 +2,7 @@
 // Il modello è Workers AI (gratuito, separato da Claude). Se non risponde o il budget del giorno
 // è finito, Kōki va "a inerzia" con regole semplici (fallbackDecide).
 
-import { PLACES, ACTIONS, pick, a as al } from "./world.js";
+import { PLACES, ACTIONS, FORME, SEGRETI, pick, a as al } from "./world.js";
 
 export const CORE = [
   "sei curioso: ti chiedi il perché di tutto e vuoi capire come funzionano le cose",
@@ -56,6 +56,7 @@ export function decisionPrompt(S, W, ctx) {
   const user = [
     `Adesso è ${ctx.ora}, ${ctx.stagione}. Fuori: ${ctx.meteo}, ${ctx.notte ? "è notte" : "è giorno"}.`,
     `Sei qui: ${placeView(S, W)}`,
+    ctx.oggettiQui && ctx.oggettiQui.length ? "Qui ci sono anche cose cambiate o fatte da qualcuno (forse da te):\n" + ctx.oggettiQui.map((o) => `- ${o.nome}: ${o.descrizione}${o.rotto ? " (rotto)" : ""}`).join("\n") : "",
     `Come ti senti: ${feelings(S)}.`,
     S.esito ? `Hai appena finito: ${S.esito}` : "",
     ctx.novita.length ? "Novità:\n" + ctx.novita.map((n) => "- " + n).join("\n") : "",
@@ -65,6 +66,7 @@ export function decisionPrompt(S, W, ctx) {
     `Le tue cose: ${S.inventario.length ? S.inventario.slice(-12).join(", ") : "ancora niente"}.`,
     "Luoghi dell'isola:\n" + places,
     "Cosa puoi fare (scegli SOLO da qui):\n" + Object.values(ACTIONS).map((a) => "- " + a).join("\n"),
+    "Non sei obbligato a fare le solite cose: se dentro di te nasce un'idea tua, anche strana, piccola o mai provata prima, usa libera e descrivila con parole tue. Nessuno ti dice cosa fare: decidi tu.",
     "Decidi cosa fare adesso: da 1 a 3 mosse in fila. Per ogni mossa scrivi l'azione, l'oggetto (il luogo, la cosa o il soggetto, se serve), quanti minuti (da 5 a 30) e perché, con la tua voce.",
     "Scrivi anche il pensiero che hai in questo momento (una o due frasi).",
     "Se ti nasce un nuovo desiderio, una domanda o una promessa a te stesso, aggiungilo in nuovi_pensieri. Se uno dei pensieri che ti porti dietro è risolto, metti il suo numero in risolti."
@@ -126,6 +128,7 @@ export function diaryPrompt(S, ctx) {
     `Sta finendo la giornata (${ctx.ora}) e stai per addormentarti. Scrivi la pagina di oggi del tuo diario.`,
     "Le cose che ti sono successe oggi:\n" + list(ctx.oggi, (r) => "- " + r.testo),
     ctx.opere.length ? "Cose che hai creato oggi: " + ctx.opere.join(", ") : "",
+    ctx.cambiamenti && ctx.cambiamenti.length ? "Cose che sono successe o che hai cambiato sull'isola oggi:\n" + ctx.cambiamenti.map((c) => "- " + c).join("\n") : "",
     "Scrivi il diario in prima persona, tra 80 e 180 parole, con la tua voce: cosa hai fatto, cosa hai notato, cosa ti è piaciuto o ti ha fatto paura, cosa vuoi fare domani.",
     "Poi, mentre ti addormenti, puoi cambiare UNA piccola cosa di come ti descrivi: aggiungere un'abitudine o un gusto che hai scoperto oggi, oppure toglierne uno che non è più vero.",
     `Abitudini attuali: ${sheet.abitudini.length ? sheet.abitudini.join("; ") : "nessuna"}.`,
@@ -161,9 +164,9 @@ export function chatPrompt(S, W, ctx, message) {
 }
 
 // Chiamata al modello in modalità JSON, con un piccolo paracadute se il JSON arriva sporco.
-export async function askModel(env, p, maxTokens) {
+export async function askModel(env, p, maxTokens, model) {
   if (env.MOCK_AI === "1") return mockAnswer(p);
-  const res = await env.AI.run(env.MODEL, {
+  const res = await env.AI.run(model || env.MODEL, {
     messages: [{ role: "system", content: p.system }, { role: "user", content: p.user }],
     response_format: { type: "json_schema", json_schema: p.schema },
     max_tokens: maxTokens || 450,
@@ -182,9 +185,11 @@ export async function askModel(env, p, maxTokens) {
 function mockAnswer(p) {
   const props = p.schema.properties;
   if (props.mosse) {
+    if (Math.random() < .3) return { pensiero: "Mi è venuta un'idea strana.", mosse: [{ azione: "libera", oggetto: "provo a costruire una torretta con i sassi che trovo qui intorno", minuti: 20, perche: "voglio vedere se sta in piedi" }] };
     const where = pick(Object.keys(PLACES));
     return { pensiero: "Chissà cosa c'è oggi " + al(PLACES[where].nome) + ".", mosse: [{ azione: "vai", oggetto: where, minuti: 10, perche: "voglio vedere com'è oggi" }, { azione: pick(["cerca", "osserva", "disegna"]), oggetto: "quello che trovo", minuti: 20, perche: "mi incuriosisce" }], nuovi_pensieri: Math.random() < .2 ? [{ tipo: "domanda", testo: "Chi sposta il gatto di pietra?" }] : [] };
   }
+  if (props.racconto) return { riuscito: true, racconto: "Kōki ha impilato tre sassi piatti uno sull'altro, con molta pazienza.", ricordo: "Ho fatto una piccola torre di sassi. È venuta un po' storta ma sta in piedi!", crea: [{ nome: "torretta di sassi", descrizione: "tre sassi piatti impilati, un po' storti", forma: "pila_di_sassi", colore: "#9A9284", grandezza: "piccola" }], modifica: [], rimuovi: [], usa: [], trova: [], umore: 0.2 };
   if (props.diario) return { diario: "Oggi ho camminato tanto. Ho trovato cose piccole e belle e le ho messe sulla mensola. Domani voglio tornare sulla collina.", aggiungi_gusto: "mi piace il rumore delle onde" };
   if (props.risposta) return { risposta: "Ciao, Custode! Oggi l'isola è bellissima.", pensiero: "Mi fa piacere che mi parli." };
   return { pensiero: "Ho pensato a tante cose.", ricordi_importanti: [], confermate: [], nuove_convinzioni: ["Il mare porta sempre qualcosa di nuovo"], nuovi_pensieri: [] };
@@ -203,4 +208,40 @@ export function fallbackDecide(S, ctx) {
     return { pensiero: "Vado a vedere " + PLACES[where].nome + ".", mosse: [{ azione: "vai", oggetto: where, minuti: 10, perche: "curiosità" }, { azione: "cerca", minuti: 20, perche: "magari trovo qualcosa" }] };
   }
   return { pensiero: "Mi guardo intorno.", mosse: [{ azione: "osserva", oggetto: "quello che ho intorno", minuti: 20, perche: "mi piace guardare" }] };
+}
+
+// Il Mondo: un narratore imparziale che decide cosa succede davvero quando Kōki prova a fare qualcosa di libero.
+export function narratorPrompt(S, W, ctx, intento, perche) {
+  const p = PLACES[S.luogo];
+  const system = [
+    "Sei il Mondo dell'isola di Kōki: un narratore imparziale e coerente, come il master di un gioco di ruolo. Non sei Kōki e non lo guidi: decidi solo cosa succede davvero quando prova a fare qualcosa.",
+    "Kōki è un piccolo spirito alto come un gatto, con una testa grande, braccini corti e poca forza. Può usare solo le cose che porta con sé o che ci sono davvero nel posto dove si trova.",
+    "Regole: sii plausibile e concreto. A volte riesce, a volte no, a volte succede qualcosa di inatteso ma sensato. Non inventare persone o animali parlanti. Può segnare, sporcare, decorare o rompere piccole parti degli edifici, ma non distruggerli. Le cose che crea sono piccole, fatte con materiali semplici.",
+    "Segreti dell'isola che non devi mai risolvere né spiegare: " + SEGRETI.join(" "),
+    "Scrivi in italiano, in modo semplice."
+  ].join("\n");
+  const user = [
+    `Ora: ${ctx.ora}, ${ctx.stagione}, ${ctx.meteo}, ${ctx.notte ? "notte" : "giorno"}.`,
+    `Luogo: ${p.nome}. ${p.desc}`,
+    ctx.oggettiQui.length ? "Cose già presenti qui (con il loro numero):\n" + ctx.oggettiQui.map((o) => `- [${o.id}] ${o.nome}: ${o.descrizione}${o.rotto ? " (rotto)" : ""}`).join("\n") : "Qui non c'è niente di costruito o cambiato.",
+    `Cose che Kōki porta con sé: ${S.inventario.length ? S.inventario.join(", ") : "niente"}.`,
+    `Kōki prova a fare questo: "${intento}". Perché: "${perche || "non lo dice"}".`,
+    "Decidi cosa succede. Rispondi con: riuscito (vero o falso); racconto (1-3 frasi in terza persona, quello che succede davvero); ricordo (1-2 frasi in prima persona, come Kōki se lo ricorderà); crea (cose nuove che restano in questo posto, solo se ha senso: nome, descrizione breve, forma scelta tra " + FORME.join(", ") + ", colore in esadecimale, grandezza piccola, media o grande); modifica (cose già presenti che cambiano: numero, nuova descrizione, rotto vero o falso); rimuovi (numeri delle cose che spariscono); usa (cose che Kōki porta con sé e che consuma, scritte esattamente come sopra); trova (cose nuove che Kōki raccoglie e si porta via); umore (da -0.5 a 0.5, come si sente dopo)."
+  ].join("\n\n");
+  return {
+    system, user,
+    schema: {
+      type: "object",
+      properties: {
+        riuscito: { type: "boolean" }, racconto: { type: "string" }, ricordo: { type: "string" },
+        crea: { type: "array", items: { type: "object", properties: { nome: { type: "string" }, descrizione: { type: "string" }, forma: { type: "string", enum: FORME }, colore: { type: "string" }, grandezza: { type: "string", enum: ["piccola", "media", "grande"] } }, required: ["nome", "descrizione", "forma"] } },
+        modifica: { type: "array", items: { type: "object", properties: { id: { type: "integer" }, descrizione: { type: "string" }, rotto: { type: "boolean" } }, required: ["id"] } },
+        rimuovi: { type: "array", items: { type: "integer" } },
+        usa: { type: "array", items: { type: "string" } },
+        trova: { type: "array", items: { type: "string" } },
+        umore: { type: "number" }
+      },
+      required: ["riuscito", "racconto", "ricordo"]
+    }
+  };
 }

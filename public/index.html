@@ -1230,6 +1230,55 @@
   })();
   world.add(bottle);
 
+  // ---------- le cose che Kōki (e il Mondo) cambiano sull'isola ----------
+  var objGroup = new THREE.Group(); world.add(objGroup); var objKey = "";
+  var OBJ_COL = { mucchio: "#8E7A5A", buca: "#4A3424", pila_di_sassi: "#9A9284", cerchio_di_sassi: "#9A9284", palo: "#7E5534", cartello: "#A9764A", bandierina: "#D8482F", scultura: "#B3A998", aiuola: "#FF8FB1", recinto: "#A9764A", capanna: "#8A5A3C", ponticello: "#A9764A", oggetto_appeso: "#F2B705", segno_a_terra: "#C9B07E", scritta: "#3A3D3A", cumulo_di_foglie: "#D9772B", castello_di_sabbia: "#E6CF93", piccola_torre: "#B9B4A6", cesto: "#B98756", nido: "#8A6A4A", falo_spento: "#3A2E26", sentiero_di_sassi: "#B3A998", statuetta: "#C4B9A6", altro: "#BFA6E8" };
+  function shapeOf(o) {
+    var g = new THREE.Group(), col = o.colore || OBJ_COL[o.forma] || "#B9A27A", m = mat(col), wood = mat(WOOD), dk = mat(WOOD_D), k = o.id * 7.3, i, a;
+    function rnd2(n) { var x = Math.sin(k + n * 12.9) * 43758.5453; return x - Math.floor(x); }
+    switch (o.forma) {
+      case "mucchio": add(g, rock(0.38, 0), m, 0, 0.12, 0).scale.y = 0.5; add(g, rock(0.22, 0), m, 0.25, 0.08, 0.1).scale.y = 0.5; break;
+      case "buca": add(g, cyl(0.38, 0.32, 0.03, 12), mat("#2E2016"), 0, 0.01, 0, true); for (i = 0; i < 5; i++) { a = i / 5 * 6.28; add(g, rock(0.12, 0), mat("#8E7A5A"), Math.cos(a) * 0.48, 0.05, Math.sin(a) * 0.48).scale.y = 0.5; } break;
+      case "pila_di_sassi": for (i = 0; i < 4; i++) { var st = add(g, rock(0.22 - i * 0.03, 1), m, (rnd2(i) - 0.5) * 0.06, 0.08 + i * 0.15, (rnd2(i + 5) - 0.5) * 0.06); st.scale.y = 0.45; st.rotation.y = rnd2(i) * 3; } break;
+      case "cerchio_di_sassi": for (i = 0; i < 9; i++) { a = i / 9 * 6.28; add(g, rock(0.09 + rnd2(i) * 0.05, 0), m, Math.cos(a) * 0.55, 0.05, Math.sin(a) * 0.55).scale.y = 0.6; } break;
+      case "palo": add(g, cyl(0.04, 0.05, 1.1, 6), m, 0, 0.55, 0); break;
+      case "cartello": add(g, cyl(0.03, 0.04, 0.9, 6), dk, 0, 0.45, 0); add(g, box(0.55, 0.32, 0.04), m, 0, 0.85, 0); add(g, box(0.4, 0.03, 0.05), mat("#3A3D3A"), 0, 0.88, 0.01, true); break;
+      case "bandierina": add(g, cyl(0.015, 0.015, 0.9, 5), dk, 0, 0.45, 0); var fl = add(g, box(0.28, 0.17, 0.01), m, 0.15, 0.78, 0, true); anim.push(function (t) { fl.rotation.y = Math.sin(t * 3 + k) * 0.35; }); break;
+      case "scultura": for (i = 0; i < 3; i++) add(g, rock(0.16 + rnd2(i) * 0.1, 1), m, (rnd2(i + 2) - 0.5) * 0.2, 0.15 + i * 0.22, (rnd2(i + 4) - 0.5) * 0.2).rotation.set(rnd2(i) * 3, rnd2(i + 1) * 3, 0); break;
+      case "aiuola": add(g, cyl(0.5, 0.52, 0.06, 12), mat("#6E4A30"), 0, 0.03, 0); for (i = 0; i < 9; i++) { a = rnd2(i) * 6.28; var r = Math.sqrt(rnd2(i + 9)) * 0.42; add(g, cyl(0.01, 0.01, 0.2, 4), mat("#4F9A4E"), Math.cos(a) * r, 0.14, Math.sin(a) * r, true); add(g, ball(0.05, 6), mat(i % 2 ? col : "#FFD35A"), Math.cos(a) * r, 0.25, Math.sin(a) * r, true); } break;
+      case "recinto": for (i = 0; i < 5; i++) { a = -0.9 + i * 0.45; add(g, box(0.05, 0.42, 0.05), m, Math.sin(a) * 0.6, 0.21, Math.cos(a) * 0.6); } seg(g, [Math.sin(-0.9) * 0.6, 0.3, Math.cos(-0.9) * 0.6], [Math.sin(0.9) * 0.6, 0.3, Math.cos(0.9) * 0.6], 0.015, m, true); break;
+      case "capanna": add(g, cone(0.5, 0.85, 7), m, 0, 0.42, 0); add(g, box(0.18, 0.26, 0.05), mat("#2A1B12"), 0, 0.13, 0.42, true); for (i = 0; i < 4; i++) { a = i / 4 * 6.28; seg(g, [Math.cos(a) * 0.1, 0.95, Math.sin(a) * 0.1], [Math.cos(a) * 0.45, 0.05, Math.sin(a) * 0.45], 0.015, dk, true); } break;
+      case "ponticello": for (i = 0; i < 6; i++) { var u = (i - 2.5) / 2.5; add(g, box(0.16, 0.04, 0.4), m, u * 0.5, 0.06 + (1 - u * u) * 0.15, 0); } break;
+      case "oggetto_appeso": add(g, cyl(0.025, 0.03, 1.0, 5), dk, 0, 0.5, 0); add(g, box(0.4, 0.03, 0.03), dk, 0.18, 1.0, 0); var hp = G(g, 0.35, 1.0, 0); seg(hp, [0, 0, 0], [0, -0.3, 0], 0.005, mat("#EEEEEE"), true); add(hp, rock(0.08, 0), m, 0, -0.36, 0, true); anim.push(function (t) { hp.rotation.z = Math.sin(t * 1.5 + k) * 0.2; }); break;
+      case "segno_a_terra": add(g, cyl(0.45, 0.45, 0.012, 14), m, 0, 0.01, 0, true); add(g, cyl(0.25, 0.25, 0.016, 14), mat("#FFFFFF"), 0, 0.012, 0, true); break;
+      case "scritta": for (i = 0; i < 4; i++) add(g, box(0.06 + rnd2(i) * 0.12, 0.012, 0.05), m, -0.3 + i * 0.2, 0.01, (rnd2(i + 3) - 0.5) * 0.1, true); break;
+      case "cumulo_di_foglie": for (i = 0; i < 7; i++) add(g, rock(0.14, 0), mat(["#E8A23A", "#D9772B", "#C9502A", "#E2C044"][i % 4]), (rnd2(i) - 0.5) * 0.5, 0.07, (rnd2(i + 7) - 0.5) * 0.5).scale.y = 0.4; break;
+      case "castello_di_sabbia": add(g, cyl(0.3, 0.34, 0.25, 8), m, 0, 0.12, 0); [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]].forEach(function (p) { add(g, cyl(0.08, 0.09, 0.32, 6), m, p[0], 0.16, p[1]); add(g, cone(0.09, 0.12, 6), m, p[0], 0.38, p[1]); }); break;
+      case "piccola_torre": for (i = 0; i < 4; i++) add(g, cyl(0.22 - i * 0.04, 0.24 - i * 0.04, 0.22, 8), m, 0, 0.11 + i * 0.22, 0); add(g, cone(0.12, 0.2, 8), mat("#C8452F"), 0, 0.98, 0); break;
+      case "cesto": add(g, cyl(0.24, 0.18, 0.22, 10, 1, true), mat(col, { side: THREE.DoubleSide }), 0, 0.11, 0); add(g, torus(0.2, 0.015, 4, 12, Math.PI), m, 0, 0.22, 0); break;
+      case "nido": add(g, torus(0.2, 0.08, 6, 12), m, 0, 0.08, 0).rotation.x = Math.PI / 2; for (i = 0; i < 3; i++) add(g, ball(0.05, 8), smat("#EAF4F7"), (i - 1) * 0.08, 0.1, (rnd2(i) - 0.5) * 0.06, true).scale.y = 1.25; break;
+      case "falo_spento": for (i = 0; i < 7; i++) { a = i / 7 * 6.28; add(g, rock(0.08, 0), mat("#8E8676"), Math.cos(a) * 0.3, 0.05, Math.sin(a) * 0.3); } seg(g, [-0.2, 0.03, -0.1], [0.2, 0.12, 0.1], 0.03, mat("#2A2018")); seg(g, [0.2, 0.03, -0.1], [-0.2, 0.12, 0.1], 0.03, mat("#2A2018")); break;
+      case "sentiero_di_sassi": for (i = 0; i < 6; i++) add(g, cyl(0.13, 0.14, 0.04, 7), m, (i - 2.5) * 0.32, 0.02, Math.sin(i) * 0.08); break;
+      case "statuetta": add(g, cyl(0.12, 0.14, 0.08, 8), mat("#7F7C75"), 0, 0.04, 0); add(g, ball(0.13, 8), m, 0, 0.2, 0).scale.y = 1.2; add(g, ball(0.1, 8), m, 0, 0.42, 0); break;
+      default: add(g, new THREE.OctahedronGeometry(0.16), m, 0, 0.3, 0); var sp = add(g, ball(0.04, 6), matLamp, 0, 0.55, 0, true); anim.push(function (t) { sp.position.y = 0.55 + Math.sin(t * 2 + k) * 0.06; });
+    }
+    if (o.rotto) { g.rotation.z = 0.3; g.children.forEach(function (c, j) { if (j % 2) c.visible = false; }); }
+    g.scale.multiplyScalar({ piccola: 0.8, media: 1.1, grande: 1.5 }[o.grandezza] || 0.9);
+    return g;
+  }
+  function applyObjects() {
+    var list = (STATE && STATE.oggetti) || [], key = list.map(function (o) { return o.id + ":" + o.rotto + ":" + o.descrizione.length; }).join("|");
+    if (key === objKey) return; objKey = key;
+    objGroup.children.slice().forEach(function (c) { var i = pick.indexOf(c); if (i >= 0) pick.splice(i, 1); objGroup.remove(c); });
+    list.forEach(function (o) {
+      var s = SPOT[o.luogo]; if (!s) return;
+      var ang = Math.atan2(s.x - s.look.x, s.z - s.look.z) + 1.1 + o.slot * 2.39996, rad = 1.5 + (o.slot % 3) * 0.55;
+      var x = s.x + Math.sin(ang) * rad, z = s.z + Math.cos(ang) * rad, g = shapeOf(o);
+      g.position.set(x, heightAt(x, z), z); g.rotation.y += o.id * 1.7; g.userData.agent = { oggetto: o };
+      objGroup.add(g); pick.push(g);
+    });
+  }
+
   function applyWorldState() {
     if (!STATE) return;
     var Wd = STATE.mondo;
@@ -1241,6 +1290,7 @@
     var tel = Wd.telescopio || { montati: [], aggiustato: false };
     if (TEL.lens) { TEL.lens.visible = tel.montati.indexOf("lente") >= 0; TEL.screw.visible = tel.montati.indexOf("vite") >= 0; TEL.crank.visible = tel.montati.indexOf("manovella") >= 0; TEL.tube.rotation.z = tel.aggiustato ? 0.55 : -0.3; }
     STONE_L.lit = !!Wd.lanterna;
+    applyObjects();
   }
   anim.push(function (t) { if (!STONE_L.light) return; var on = STONE_L.lit && nightK > 0.4, f = 1 + Math.sin(t * 11) * 0.08; STONE_L.light.intensity = on ? 1.6 * f : 0; STONE_L.window.material.emissiveIntensity = on ? 1.4 * f : 0; STONE_L.flame.visible = on; });
 
@@ -1340,7 +1390,8 @@
     K.head.rotation.x = look ? -.5 : act === "cerca" ? .35 : act === "disegna" ? .25 : Math.sin(t * .6) * .03;
     K.head.rotation.z = walking ? Math.sin(t * 9) * .035 : act === "osserva" ? Math.sin(t * .5) * .12 : Math.sin(t * .8) * .035;
     K.head.rotation.y = act === "cerca" ? Math.sin(t * 1.3) * .5 : act === "osserva" ? Math.sin(t * .35) * .4 : 0;
-    var draw = act === "disegna", wave = act === "gioca" ? 1 : 0, fix = act === "aggiusta_telescopio";
+    var draw = act === "disegna", wave = act === "gioca" ? 1 : 0, fix = act === "aggiusta_telescopio" || act === "libera";
+    if (act === "libera") { K.head.rotation.x = .3; K.bodyG.rotation.x = .12 + Math.sin(t * 2.2) * .05; } else K.bodyG.rotation.x = 0;
     K.armL.sh.rotation.set(walking ? -step * .2 : -.55, 0, .5 + Math.sin(t * 1.8) * .02);
     K.armR.sh.rotation.set(draw ? -1.0 + Math.sin(t * 6) * .12 : fix ? -1.3 + Math.sin(t * 5) * .3 : walking ? step * .45 : 0, 0, -.45 - wave * 2.3 + wave * Math.sin(t * 9) * .3);
     K.pad.visible = draw;
@@ -1405,6 +1456,7 @@
       "<div><h3>Di cosa è convinto</h3>" + (STATE.convinzioni.length ? "<ul class='list'>" + STATE.convinzioni.map(function (c) { return "<li>" + esc(c.testo) + "</li>"; }).join("") + "</ul>" : "<p class='muted'>Non si è ancora fatto un'idea delle cose.</p>") + "</div>" +
       "<div><h3>La sua collezione</h3>" + (inv ? "<div class='chips'>" + inv + "</div>" : "<p class='muted'>Vuota. Prima o poi troverà qualcosa.</p>") + "</div>" +
       "<div><h3>Disegni</h3>" + (STATE.opere.length ? "<ul class='list'>" + STATE.opere.slice(0, 12).map(function (o) { return "<li>" + esc(o.titolo) + " <span class='muted'>" + new Date(o.t).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) + "</span></li>"; }).join("") + "</ul>" : "<p class='muted'>Nessuno, per ora.</p>") + "</div>" +
+      "<div><h3>Cosa è cambiato sull'isola</h3>" + ((STATE.oggetti || []).length ? "<ul class='list'>" + STATE.oggetti.slice().reverse().slice(0, 20).map(function (o) { return "<li><b>" + esc(o.nome) + "</b> <span class='muted'>· " + esc(PLACE_NAME[o.luogo] || o.luogo) + "</span><br><span class='muted'>" + esc(o.descrizione) + (o.rotto ? " (rotto)" : "") + "</span></li>"; }).join("") + "</ul>" : "<p class='muted'>Niente, per ora. Tutto è come all'inizio.</p>") + "</div>" +
       "<div><h3>Il telescopio</h3><p class='muted' style='margin:0'>" + (tel.aggiustato ? "Aggiustato!" : "Montati: " + (tel.montati.join(", ") || "nessun pezzo") + ". Mancano: " + tel.mancanti.join(", ") + ".") + "</p></div>" +
       "<div><h3>Cronaca</h3><div class='feed'>" + STATE.log.slice(0, 25).map(function (l) { return "<div><time>" + hhmm(l.t) + "</time><span>" + esc(l.testo) + "</span></div>"; }).join("") + "</div></div>" +
       (DEMO ? "" : "<p class='muted' style='margin:0'>Cervello: " + STATE.cervello.chiamateOggi + " pensieri su " + STATE.cervello.massimo + " disponibili oggi.</p>");
@@ -1641,6 +1693,15 @@
   function openCard(a) {
     if (a && a.koki) { setView("fianco"); return; }
     if (!a) return;
+    if (a.oggetto) {
+      var o = a.oggetto; card.textContent = ""; card.hidden = false;
+      var hd = el("header"), sw0 = el("span", "swatch"); sw0.style.background = o.colore || OBJ_COL[o.forma] || "#B9A27A";
+      var tt = el("div"); tt.appendChild(el("h2", null, o.nome)); tt.appendChild(el("small", null, (PLACE_NAME[o.luogo] || o.luogo) + " · " + new Date(o.t).toLocaleDateString("it-IT", { day: "numeric", month: "long" })));
+      var xb = el("button", "close", "Chiudi"); xb.type = "button"; xb.addEventListener("click", closeCard);
+      hd.appendChild(sw0); hd.appendChild(tt); hd.appendChild(xb); card.appendChild(hd);
+      card.appendChild(el("p", "msg", o.descrizione + (o.rotto ? " (È rotto.)" : "")));
+      return;
+    }
     card.textContent = ""; card.hidden = false; S.selected = a;
     var head = el("header"), sw = el("span", "swatch"); sw.style.background = a.color;
     var ttl = el("div"); ttl.appendChild(el("h2", null, a.name)); ttl.appendChild(el("small", null, PLACE_DESC[a.id] || ""));

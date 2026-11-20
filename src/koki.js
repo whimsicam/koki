@@ -4,8 +4,8 @@
 // Ogni TICK_MINUTES un "allarme" lo sveglia e gli fa vivere un turno.
 
 import { DurableObject } from "cloudflare:workers";
-import { PLACES, CAT_SPOTS, TELESCOPE_PARTS, ACTIONS, dist, season, weatherWords, isRainy, localTime, pick, a as al } from "./world.js";
-import { decisionPrompt, reflectionPrompt, diaryPrompt, chatPrompt, askModel, fallbackDecide } from "./mind.js";
+import { PLACES, CAT_SPOTS, TELESCOPE_PARTS, ACTIONS, FORME, dist, season, weatherWords, isRainy, localTime, pick, a as al } from "./world.js";
+import { decisionPrompt, reflectionPrompt, diaryPrompt, chatPrompt, narratorPrompt, askModel, fallbackDecide } from "./mind.js";
 
 const H = 3600000, MIN = 60000;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -22,6 +22,7 @@ export class Koki extends DurableObject {
       CREATE TABLE IF NOT EXISTS diario (giorno TEXT PRIMARY KEY, t INTEGER, testo TEXT);
       CREATE TABLE IF NOT EXISTS opere (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, tipo TEXT, titolo TEXT);
       CREATE TABLE IF NOT EXISTS log (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, tipo TEXT, testo TEXT);
+      CREATE TABLE IF NOT EXISTS oggetti (id INTEGER PRIMARY KEY AUTOINCREMENT, t INTEGER, luogo TEXT, nome TEXT, descrizione TEXT, forma TEXT, colore TEXT, grandezza TEXT, rotto INTEGER DEFAULT 0, slot INTEGER);
     `);
   }
 
@@ -185,6 +186,7 @@ export class Koki extends DurableObject {
     if (az === "sistema_collezione" && needs("casa")) return true;
     if (az === "leggi_bottiglia") { if (!W.bottiglia) return false; if (needs("spiaggia")) return true; }
     if (az === "guarda_stelle" && !T.notte) { m = { ...m, azione: "osserva", oggetto: "il cielo" }; }
+    if (az === "libera" && ogg.length < 4) return false;
     if (az === "dormi") { S.dorme = true; min = 8 * 60; }
     S.attivita = { azione: m.azione, oggetto: m.azione === "osserva" ? (m.oggetto || ogg) : ogg, luogo: S.luogo, inizio: now, fine: now + min * MIN / this.speed(), perche: m.perche || "" };
     this.logga(now, "azione", `${this.descriviAzione(S.attivita)}. ${m.perche || ""}`);
@@ -202,7 +204,7 @@ export class Koki extends DurableObject {
     if (!a) return "niente";
     const o = a.oggetto ? " " + a.oggetto : "";
     return { vai: "cammina verso " + (PLACES[a.a] || {}).nome, osserva: "osserva" + o, cerca: "cerca piccole cose", disegna: "disegna" + o, gioca: "gioca" + (o ? " (" + a.oggetto + ")" : ""),
-             riposa: "si riposa", dormi: "dorme", guarda_stelle: "guarda le stelle", aggiusta_telescopio: "prova ad aggiustare il telescopio", leggi_bottiglia: "apre la bottiglia", sistema_collezione: "sistema la sua collezione" }[a.azione] || a.azione;
+             libera: (a.oggetto || "fa qualcosa di suo").replace(/^(provo a |voglio |vorrei )/i, ""), riposa: "si riposa", dormi: "dorme", guarda_stelle: "guarda le stelle", aggiusta_telescopio: "prova ad aggiustare il telescopio", leggi_bottiglia: "apre la bottiglia", sistema_collezione: "sistema la sua collezione" }[a.azione] || a.azione;
   }
 
   concludi(S, W, T, now) {
@@ -234,6 +236,7 @@ export class Koki extends DurableObject {
           d = W.telescopio.aggiustato ? "Il telescopio funziona: dentro si vedono le stelle da vicino." : "Il telescopio è rotto: mancano " + W.telescopio.mancanti.join(", ") + ". Forse sono da qualche parte sull'isola.";
           forza = .7;
         } else if (ogg.includes("impront") && S.luogo === "spiaggia" && W.impronte) d = "Le impronte sono grandi e tonde, con quattro dita. Partono dal mare e ci ritornano.";
+        else if (this.oggettoQui(S, ogg)) { const o = this.oggettoQui(S, ogg); d = `${o.nome}: ${o.descrizione}${o.rotto ? " È rotto." : ""}`; forza = .5; }
         else if (ogg.includes("cielo")) d = T.notte ? (T.nuvole > 60 ? "Il cielo è coperto, non si vede neanche una stella." : "Il cielo è pieno di stelle.") : `Il cielo oggi è ${T.meteo}.`;
         else if (S.luogo === "lanterna" && T.notte && W.lanterna) d = "La lanterna di pietra è accesa! Dentro c'è una fiammella, ma qui non c'è nessuno.";
         else d = pick(T.notte && P.dettagliNotte ? P.dettagliNotte.concat(P.dettagli) : P.dettagli);
@@ -308,10 +311,67 @@ export class Koki extends DurableObject {
     S.umore = clamp(S.umore, -1, 1);
   }
 
+  oggettoQui(S, testo) {
+    const t = (testo || "").toLowerCase(); if (t.length < 3) return null;
+    return this.sql.exec("SELECT id, nome, descrizione, rotto FROM oggetti WHERE luogo = ?", S.luogo).toArray().find((o) => t.includes(o.nome.toLowerCase()) || o.nome.toLowerCase().includes(t)) || null;
+  }
+
+  // ---------- il Mondo racconta cosa succede quando Kōki fa qualcosa di libero ----------
+  async narra(S, W, T, now) {
+    const a = S.attivita, b = S.corpo, ctx = this.contesto(S, T);
+    let r = null;
+    if (this.budgetGrande(S, T)) {
+      try { r = await askModel(this.env, narratorPrompt(S, W, ctx, a.oggetto, a.perche), 700, this.env.BIG_MODEL); }
+      catch (e) { this.logga(now, "errore", "Il Mondo (modello grande) non ha risposto: " + String(e && e.message || e).slice(0, 200)); }
+    }
+    if (!r && this.budget(S, T)) {
+      try { r = await askModel(this.env, narratorPrompt(S, W, ctx, a.oggetto, a.perche), 650); }
+      catch (e) { this.logga(now, "errore", "Il Mondo non ha risposto: " + String(e && e.message || e).slice(0, 200)); }
+    }
+    if (!r || !r.racconto) {
+      S.esito = `Ho provato a fare una cosa (${a.oggetto}), ma alla fine non ci sono riuscito.`;
+      this.ricorda(now, S.esito, .35, S.luogo); this.logga(now, "esito", S.esito); return;
+    }
+    const lower = (x) => String(x || "").toLowerCase().trim();
+    for (const u of (r.usa || []).slice(0, 4)) { const i = S.inventario.findIndex((c) => lower(c) === lower(u) || lower(c).includes(lower(u)) || lower(u).includes(lower(c))); if (i >= 0) S.inventario.splice(i, 1); }
+    for (const f of (r.trova || []).slice(0, 3)) if (f && f.length < 60) S.inventario.push(f);
+    for (const c of (r.crea || []).slice(0, 2)) {
+      if (!c || !c.nome) continue;
+      const forma = FORME.includes(c.forma) ? c.forma : "altro";
+      const colore = /^#[0-9a-f]{6}$/i.test(c.colore || "") ? c.colore : "";
+      const slot = this.sql.exec("SELECT COALESCE(MAX(slot), -1) + 1 AS n FROM oggetti WHERE luogo = ?", S.luogo).one().n;
+      this.sql.exec("INSERT INTO oggetti (t, luogo, nome, descrizione, forma, colore, grandezza, slot) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", now, S.luogo, c.nome.slice(0, 60), String(c.descrizione || "").slice(0, 240), forma, colore, ["piccola", "media", "grande"].includes(c.grandezza) ? c.grandezza : "piccola", slot);
+      this.logga(now, "mondo", `Nuovo, ${PLACES[S.luogo].nome}: ${c.nome}.`);
+    }
+    for (const m of (r.modifica || []).slice(0, 3)) {
+      const o = this.sql.exec("SELECT nome FROM oggetti WHERE id = ?", m.id).toArray()[0]; if (!o) continue;
+      if (m.descrizione) this.sql.exec("UPDATE oggetti SET descrizione = ? WHERE id = ?", String(m.descrizione).slice(0, 240), m.id);
+      if (typeof m.rotto === "boolean") this.sql.exec("UPDATE oggetti SET rotto = ? WHERE id = ?", m.rotto ? 1 : 0, m.id);
+      this.logga(now, "mondo", `È cambiato: ${o.nome}.`);
+    }
+    for (const id of (r.rimuovi || []).slice(0, 3)) {
+      const o = this.sql.exec("SELECT nome FROM oggetti WHERE id = ?", id).toArray()[0]; if (!o) continue;
+      this.sql.exec("DELETE FROM oggetti WHERE id = ?", id); this.logga(now, "mondo", `Non c'è più: ${o.nome}.`);
+    }
+    const tot = this.sql.exec("SELECT COUNT(*) AS n FROM oggetti").one().n;
+    if (tot > 40) for (const o of this.sql.exec("SELECT id, nome FROM oggetti ORDER BY id LIMIT ?", tot - 40).toArray()) { this.sql.exec("DELETE FROM oggetti WHERE id = ?", o.id); this.logga(now, "mondo", `Il tempo e il vento si sono portati via: ${o.nome}.`); }
+    this.logga(now, "racconto", r.racconto);
+    S.esito = r.ricordo || r.racconto;
+    this.ricorda(now, S.esito, r.riuscito ? .6 : .45, S.luogo);
+    S.umore = clamp(S.umore + clamp(Number(r.umore) || 0, -.5, .5), -1, 1);
+    b.espressione = clamp(b.espressione - .3, 0, 1); b.curiosita = clamp(b.curiosita - .2, 0, 1);
+  }
+
   // ---------- la mente ----------
+  budgetGrande(S, T) {
+    if (S.ai.giorno !== T.giorno) S.ai = { giorno: T.giorno, chiamate: 0, grandi: 0 };
+    const max = parseInt(this.env.MAX_BIG_CALLS, 10) || 40;
+    if (!this.env.BIG_MODEL || (S.ai.grandi || 0) >= max) return false;
+    S.ai.grandi = (S.ai.grandi || 0) + 1; return true;
+  }
   budget(S, T, extra) {
-    if (S.ai.giorno !== T.giorno) S.ai = { giorno: T.giorno, chiamate: 0 };
-    const max = parseInt(this.env.MAX_AI_CALLS, 10) || 180;
+    if (S.ai.giorno !== T.giorno) S.ai = { giorno: T.giorno, chiamate: 0, grandi: 0 };
+    const max = parseInt(this.env.MAX_AI_CALLS, 10) || 150;
     if (S.ai.chiamate >= max + (extra || 0)) return false;
     S.ai.chiamate++; return true;
   }
@@ -321,6 +381,7 @@ export class Koki extends DurableObject {
       ricordi: this.ricordiRilevanti(S, 6),
       convinzioni: this.sql.exec("SELECT id, testo, prove FROM convinzioni ORDER BY prove DESC, id DESC LIMIT 5").toArray(),
       aperti: this.sql.exec("SELECT id, tipo, testo FROM aperti WHERE chiuso = 0 ORDER BY id DESC LIMIT 5").toArray(),
+      oggettiQui: this.sql.exec("SELECT id, nome, descrizione, rotto FROM oggetti WHERE luogo = ? ORDER BY id DESC LIMIT 8", S.luogo).toArray(),
       attivita: this.descriviAzione(S.attivita)
     };
   }
@@ -328,7 +389,12 @@ export class Koki extends DurableObject {
   async decidi(S, W, T, now) {
     const ctx = this.contesto(S, T);
     let r = null, fonte = "regole";
-    if (this.budget(S, T)) {
+    const grande = Math.random() < .3 && (S.ai.grandi || 0) < (parseInt(this.env.MAX_BIG_CALLS, 10) || 40) * .5 && this.budgetGrande(S, T);
+    if (grande) {
+      try { r = await askModel(this.env, decisionPrompt(S, W, ctx), 450, this.env.BIG_MODEL); fonte = "mente"; }
+      catch (e) { this.logga(now, "errore", "Il modello grande non ha risposto: " + String(e && e.message || e).slice(0, 200)); }
+    }
+    if (!r && this.budget(S, T)) {
       try { r = await askModel(this.env, decisionPrompt(S, W, ctx), 450); fonte = "mente"; }
       catch (e) { this.logga(now, "errore", "Il modello non ha risposto: " + String(e && e.message || e).slice(0, 200)); }
     }
@@ -376,7 +442,8 @@ export class Koki extends DurableObject {
     const ctx = {
       ora: T.ora,
       oggi: this.sql.exec("SELECT testo FROM memorie WHERE t > ? ORDER BY id LIMIT 25", da).toArray(),
-      opere: this.sql.exec("SELECT titolo FROM opere WHERE t > ?", da).toArray().map((o) => o.titolo)
+      opere: this.sql.exec("SELECT titolo FROM opere WHERE t > ?", da).toArray().map((o) => o.titolo),
+      cambiamenti: this.sql.exec("SELECT testo FROM log WHERE t > ? AND tipo IN ('racconto', 'mondo') ORDER BY id LIMIT 15", da).toArray().map((l) => l.testo)
     };
     let testo = null;
     if (this.budget(S, T, 20)) {
@@ -420,7 +487,7 @@ export class Koki extends DurableObject {
       S.attivita = null; S.coda = [{ azione: "dormi", minuti: 60, perche: "non ce la faccio più, mi si chiudono gli occhi" }];
       this.logga(now, "evento", "Kōki è stanchissimo.");
     }
-    if (S.attivita && now >= S.attivita.fine) { this.concludi(S, W, T, now); S.attivita = null; }
+    if (S.attivita && now >= S.attivita.fine) { if (S.attivita.azione === "libera") await this.narra(S, W, T, now); else this.concludi(S, W, T, now); S.attivita = null; }
     if (S.urgente && S.attivita) { S.attivita = null; S.coda = []; }
     if (!S.attivita) {
       while (S.coda.length && !S.attivita && !S.urgente) { const m = S.coda.shift(); this.avvia(S, W, m, now, T); }
@@ -448,8 +515,9 @@ export class Koki extends DurableObject {
       aperti: this.sql.exec("SELECT id, tipo, testo, t FROM aperti WHERE chiuso = 0 ORDER BY id DESC").toArray(),
       convinzioni: this.sql.exec("SELECT testo, prove FROM convinzioni ORDER BY prove DESC LIMIT 12").toArray(),
       opere: this.sql.exec("SELECT t, tipo, titolo FROM opere ORDER BY id DESC LIMIT 30").toArray(),
+      oggetti: this.sql.exec("SELECT id, t, luogo, nome, descrizione, forma, colore, grandezza, rotto, slot FROM oggetti ORDER BY id").toArray(),
       log: this.sql.exec("SELECT t, tipo, testo FROM log ORDER BY id DESC LIMIT 40").toArray(),
-      cervello: { chiamateOggi: S.ai.giorno === T.giorno ? S.ai.chiamate : 0, massimo: parseInt(this.env.MAX_AI_CALLS, 10) || 180 }
+      cervello: { chiamateOggi: S.ai.giorno === T.giorno ? S.ai.chiamate + (S.ai.grandi || 0) : 0, massimo: (parseInt(this.env.MAX_AI_CALLS, 10) || 150) + (parseInt(this.env.MAX_BIG_CALLS, 10) || 40) }
     };
   }
 
@@ -499,7 +567,7 @@ export class Koki extends DurableObject {
       return json({ risposta: r.risposta, pensiero: r.pensiero || "" });
     }
     if (p === "/api/rinasci" && req.method === "POST" && url.searchParams.get("conferma") === "RINASCI") {
-      this.sql.exec("DELETE FROM stato; DELETE FROM memorie; DELETE FROM convinzioni; DELETE FROM aperti; DELETE FROM diario; DELETE FROM opere; DELETE FROM log;");
+      this.sql.exec("DELETE FROM stato; DELETE FROM memorie; DELETE FROM convinzioni; DELETE FROM aperti; DELETE FROM diario; DELETE FROM opere; DELETE FROM log; DELETE FROM oggetti;");
       this.init(now);
       return json({ ok: true });
     }
