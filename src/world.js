@@ -7,7 +7,7 @@ export const PLACES = {
     nome: "la casa", x: 4.5, z: 12.5,
     desc: "La tua casetta tonda con il tetto di muschio e la porta azzurra. Dentro c'è una mensola dove tieni le cose che trovi.",
     dettagli: ["La porta azzurra cigola un po'.", "Dal camino esce un filo di fumo.", "Sulla mensola c'è ancora spazio.", "Davanti alla porta ci sono dei sassi piatti, uno dopo l'altro.", "Sul filo del bucato sventolano tre panni colorati."],
-    cose: ["bottone d'osso con tre buchi invece di quattro", "biglia con dentro una bollicina d'aria", "chiave minuscola senza serratura", "dente di pettine di legno"], coperto: true
+    cose: ["matita mozzicata", "bottone d'osso con tre buchi invece di quattro", "biglia con dentro una bollicina d'aria", "chiave minuscola senza serratura", "dente di pettine di legno"], coperto: true
   },
   piazza: {
     nome: "la piazzetta", x: 0, z: 0,
@@ -18,25 +18,26 @@ export const PLACES = {
   laghetto: {
     nome: "il laghetto", x: 0.5, z: 17.5,
     desc: "Un laghetto con le ninfee, un ponticello di legno e due anatre bianche.",
+    dettagliNotte: ["Di notte nel laghetto si riflettono delle stelle che in cielo non ci sono."],
     dettagli: ["Dal ponticello ti vedi riflesso nell'acqua.", "Le anatre nuotano in fila.", "Le ninfee si chiudono quando fa sera.", "Tra le canne gracida qualcosa."],
     cose: ["sasso con una riga bianca tutt'intorno", "piuma d'anatra bagnata", "guscio di lumaca d'acqua vuoto", "canna cava che fischia"]
   },
   giardino: {
     nome: "il prato fiorito", x: -7.5, z: 6.5,
     desc: "Un prato pieno di fiori di tanti colori, con le farfalle e le arnie delle api.",
-    dettagli: ["Una farfalla gialla si è posata su un fiore viola.", "I fiori profumano di più dopo la pioggia.", "Le api entrano ed escono dalle arnie.", "Ci sono fiori che non hai mai visto altrove."],
+    dettagli: ["Una farfalla gialla si è posata su un fiore viola.", "I fiori profumano di più dopo la pioggia.", "Le api entrano ed escono dalle arnie.", "Ci sono fiori che non hai mai visto altrove.", "In mezzo al prato c'è una porta di legno in piedi da sola, senza muri intorno."],
     cose: ["petalo che non perde il colore", "seme a elica", "ala di farfalla trasparente", "sassolino rosa a forma di goccia"]
   },
   bosco: {
     nome: "il bosco", x: -10.5, z: -8.5,
     desc: "Una radura nel bosco con un albero enorme e vecchissimo, funghi rossi in cerchio e un tronco cavo.",
-    dettagli: ["Nel tronco dell'albero vecchio c'è un buco a forma di cuore.", "I funghi crescono in cerchio, come se ballassero.", "Nel tronco cavo l'eco ripete i rumori.", "Si sente un picchio da qualche parte."],
+    dettagli: ["Nel tronco dell'albero vecchio c'è un buco a forma di cuore.", "I funghi crescono in cerchio, come se ballassero.", "Nel tronco cavo l'eco ripete i rumori.", "Si sente un picchio da qualche parte.", "Tra le radici dell'albero vecchio c'è una casetta piccolissima, uguale alla tua."],
     cose: ["pigna chiusa che non si apre", "ghianda con il cappello doppio", "piuma a righe", "pezzo di corteccia con un buchino"]
   },
   collina: {
     nome: "la collina", x: -5.5, z: -17.5,
     desc: "Il punto più alto dell'isola, con una cascata. In cima c'è un vecchio telescopio su una piattaforma di pietra.",
-    dettagli: ["Da quassù si vede tutto il mare intorno.", "La cascata scende fino al laghetto di sotto.", "C'è un cartello con una stella disegnata.", "Il vento qui è più forte."],
+    dettagli: ["Da quassù si vede tutto il mare intorno.", "La cascata scende fino al laghetto di sotto.", "C'è un cartello con una stella disegnata.", "Il vento qui è più forte.", "A metà salita c'è un vecchio telefono nero attaccato a un palo. Non c'è nessun filo."],
     cose: ["sassolino che luccica solo al sole", "quadrifoglio con una foglia piegata", "pezzo di vetro curvo"]
   },
   spiaggia: {
@@ -58,11 +59,11 @@ export const PLACES = {
     cose: ["ingranaggio con un dente mancante", "vite d'ottone", "lancetta minuscola"]
   },
   casetta: {
-    nome: "la casetta chiusa", x: 15, z: -10.5,
-    desc: "Una casetta viola e storta, con l'edera sui muri. La porta è chiusa con un lucchetto d'oro.",
-    dettagli: ["Il lucchetto è chiuso. Non c'è nessuna chiave in giro.", "Dalla buca delle lettere spunta una busta, ma è incastrata.", "Se bussi, nessuno risponde.", "Dalle finestre non si vede dentro, è tutto buio."],
-    dettagliNotte: ["Di notte una finestra della casetta è accesa, con una luce viola. Ma dentro non si vede nessuno."],
-    cose: ["foglia d'edera a cinque punte", "chiodo storto", "pezzo di vetro viola"]
+    nome: "la casa stregata", x: 15, z: -10.5,
+    desc: "Una casa grande e storta di legno scuro, con le finestre rotte e delle assi inchiodate sulla porta. Intorno ci sono alberi secchi e un cancelletto.",
+    dettagli: ["Le assi sulla porta sono inchiodate storte, ma tra una e l'altra c'è uno spiraglio.", "Al piano di sopra una finestra è rotta.", "Il cancelletto cigola anche senza vento.", "Sul portico c'è una sedia a dondolo.", "Dal camino non esce mai fumo."],
+    dettagliNotte: ["Di notte dietro le finestre si muovono delle luci bianche.", "Dalla casa arrivano dei rumori leggeri, come passi."],
+    cose: ["chiodo storto", "pezzo di vetro viola", "bottone nero lucido"]
   },
   orto: {
     nome: "l'orto", x: -8, z: 13,
@@ -70,11 +71,11 @@ export const PLACES = {
     dettagli: ["Lo spaventapasseri dondola un po' col vento.", "Nella serra fa caldo.", "Le carote spuntano con il loro ciuffo.", "C'è un innaffiatoio blu vicino al recinto."],
     cose: ["seme di zucca nero", "fagiolo a macchie", "carota storta con due punte"]
   },
-  lanterna: {
-    nome: "la lanterna di pietra", x: -17, z: 2.5,
-    desc: "Una vecchia lanterna di pietra in mezzo a un cerchio di sassi coperti di muschio.",
-    dettagli: ["La lanterna è fredda, ma dentro c'è un po' di cera sciolta.", "I sassi intorno sono disposti in cerchio, come se qualcuno li avesse messi apposta.", "Il muschio sui sassi è morbido."],
-    cose: ["sasso muschiato morbido", "goccia di cera indurita"]
+  pozzo: {
+    nome: "il pozzo", x: -17, z: 2.5,
+    desc: "Un vecchio pozzo di pietra in mezzo all'erba alta, con un tettuccio di legno, una corda e un secchio.",
+    dettagli: ["Dal fondo del pozzo sale un'aria fredda.", "Se ti avvicini, dal fondo si sente un respiro lento.", "La corda è bagnata, ma il secchio è sempre vuoto.", "L'erba intorno al pozzo è schiacciata in cerchio.", "Il fondo non si vede."],
+    cose: ["sasso freddo e liscio", "moneta verde di muschio"]
   },
   giardino_giapponese: {
     nome: "il giardino giapponese", x: 8.5, z: -16.5,
@@ -85,7 +86,7 @@ export const PLACES = {
 };
 
 // Dove può comparire il gatto di pietra (si sposta di notte, quando nessuno guarda).
-export const CAT_SPOTS = ["piazza", "laghetto", "giardino", "bosco", "spiaggia", "molo", "collina", "orto", "orologio", "lanterna", "giardino_giapponese"];
+export const CAT_SPOTS = ["piazza", "laghetto", "giardino", "bosco", "spiaggia", "molo", "collina", "orto", "orologio", "pozzo", "giardino_giapponese"];
 
 // I pezzi che mancano al telescopio, e dove sono nascosti.
 export const TELESCOPE_PARTS = { lente: "spiaggia", vite: "bosco", manovella: "molo" };
@@ -110,10 +111,15 @@ export const FORME = ["mucchio", "buca", "pila_di_sassi", "cerchio_di_sassi", "p
 
 // I misteri dell'isola: il Mondo non li risolve mai.
 export const SEGRETI = [
-  "La casetta chiusa non si apre mai: né la porta, né le finestre. Non esiste una chiave sull'isola, per ora.",
   "Nessuno vede mai il gatto di pietra muoversi: si sposta solo quando nessuno guarda.",
-  "La lanterna di pietra si accende da sola certe notti: non si sa chi o cosa la accenda.",
-  "Le impronte sulla spiaggia arrivano dal mare e ci tornano: non si scopre ancora di chi sono.",
+  "Nella casa stregata ci sono dei fantasmi che certe notti escono. Non si dice mai cosa sono né cosa vogliono: lo si capisce solo da come si comportano. Non si entra facilmente.",
+  "La porta in mezzo al prato si apre, ma dall'altra parte c'è sempre lo stesso prato. Non porta da nessun'altra parte.",
+  "Di notte nel laghetto si riflettono stelle che in cielo non ci sono.",
+  "Certe mattine compaiono delle orme che partono dal mare. Non si scopre mai di chi sono.",
+  "Dal fondo del pozzo si sente respirare. Il fondo non si vede e non ci si può scendere.",
+  "Nel bosco c'è una casetta in miniatura uguale a quella di Kōki, con sulla mensola le sue stesse cose. Non si sa chi l'ha fatta.",
+  "Il telefono sulla collina non ha fili. Certe notti squilla. Se si risponde c'è solo silenzio o un respiro, mai una voce.",
+  "Lo spaventapasseri dell'orto ogni mattina è girato in un'altra direzione. Nessuno lo vede mai girarsi.",
   "L'orologio della torre va all'indietro e non si può aggiustare.",
   "I pezzi del telescopio (lente, vite, manovella) si trovano solo cercando nei posti giusti, non si possono costruire."
 ];

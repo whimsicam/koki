@@ -9,7 +9,7 @@
 <title>Kōki</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rubik:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@500;700&display=swap">
 <style>
   /* Layout: il mondo 3D riempie lo schermo; sopra galleggiano una testata, le etichette degli agenti e una scheda in basso. */
   :root {
@@ -168,6 +168,100 @@
     .views button { padding: 6px 7px; font-size: 11.5px; white-space: nowrap; }
     .card { bottom: 120px; }
   }
+  /* ===== tema CAM Cash: crema, card bianche, pastelli ===== */
+  :root {
+    --ink: #1C1B1B; --ink-2: #55524C; --muted: #8B867D; --line: #E6DFD2; --paper: #FAF7EE; --card: #FFFFFF; --panel: #F4EDE2;
+    --mint: #9FD8B8; --mint-ink: #2E7D57; --mint-bg: #E3F4EA; --coral: #F2A48F; --coral-ink: #B5523A; --coral-bg: #FCE6DF;
+    --yellow: #FDE293; --yellow-bg: #FFF4CF; --yellow-ink: #8A6A10; --lilac: #C9B8F0; --lilac-bg: #EEE8FB; --lilac-ink: #5B45A0;
+    --sky: #A9D2F0; --sky-bg: #E4F1FB; --sky-ink: #2D6A96; --pink: #F5B8CF; --pink-bg: #FCE8F0; --pink-ink: #A3456C; --grey-bg: #EEE9E0;
+    --accent: #1C1B1B; --font-ui: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  }
+  body { font-family: var(--font-ui); }
+  .glass, .brand, .pop { background: rgba(250, 247, 238, .9); border: 0; box-shadow: 0 1px 2px rgba(60, 50, 30, .05), 0 8px 24px rgba(60, 50, 30, .10); border-radius: 18px; }
+  .brand .title { font: 800 15px var(--font-ui); letter-spacing: -.01em; }
+  .views button[aria-pressed="true"], .chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  button, .btn { font-family: var(--font-ui); font-weight: 600; }
+  .muted { color: var(--muted); }
+  .pallino { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); width: 62px; height: 62px; padding: 0; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(60, 50, 30, .08), 0 10px 28px rgba(60, 50, 30, .18); display: grid; place-items: center; z-index: 4; transition: transform .25s; }
+  .pallino svg { width: 50px; height: 50px; }
+  .pallino[aria-expanded="true"] { transform: translateX(-50%) scale(.9); }
+  .sheet { background: var(--paper); max-width: 600px; max-height: min(86vh, 900px); border-radius: 28px 28px 0 0; box-shadow: 0 -10px 40px rgba(60, 50, 30, .18); padding: 8px 14px calc(env(safe-area-inset-bottom, 0px) + 18px); border: 0; }
+  .sheet::before { content: ""; display: block; width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 2px auto 6px; flex: none; }
+  .sh-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 4px 6px 10px; flex: none; }
+  .sh-head h1 { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
+  .sh-head h1 .jp { font-weight: 400; color: var(--muted); font-size: 20px; }
+  .eyebrow { font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .x { width: 34px; height: 34px; border-radius: 50%; padding: 0; justify-content: center; background: var(--panel); border: 0; font-size: 20px; box-shadow: none; }
+  .sheet .body { gap: 10px; padding: 0 2px 6px; }
+  details.acc { background: var(--card); border-radius: 22px; box-shadow: 0 1px 2px rgba(60, 50, 30, .04), 0 6px 18px rgba(60, 50, 30, .05); }
+  details.acc > summary { list-style: none; padding: 15px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  details.acc > summary::-webkit-details-marker { display: none; }
+  details.acc .pal { width: 30px; height: 30px; border-radius: 50%; background: var(--c); flex: none; display: grid; place-items: center; font-style: normal; font-size: 15px; transition: transform .3s; }
+  details.acc[open] .pal { transform: scale(1.08); }
+  details.acc .t { flex: 1; min-width: 0; display: grid; }
+  details.acc .t b { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+  details.acc .t small { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  details.acc .chev { width: 20px; height: 20px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s; flex: none; }
+  details.acc[open] .chev { transform: rotate(180deg); }
+  details.acc .cb { padding: 0 16px 16px; display: grid; gap: 12px; }
+  .sheet h3 { font-size: 11.5px; font-weight: 600; letter-spacing: .08em; color: var(--muted); margin: 6px 0 0; }
+  .panel2 { background: var(--panel); border-radius: 16px; padding: 12px 14px; }
+  .now { display: grid; gap: 4px; }
+  .now b { font-size: 15px; }
+  .now p { margin: 0; font-size: 14px; color: var(--ink-2); }
+  .rings { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
+  .legend { display: grid; gap: 6px; font-size: 13.5px; }
+  .legend div { display: flex; align-items: center; gap: 8px; }
+  .legend i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .legend span { color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .minis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .mini { display: grid; justify-items: center; gap: 2px; font-size: 12px; color: var(--ink-2); text-align: center; }
+  .mini b { font-size: 12.5px; color: var(--ink); }
+  .skills { display: grid; gap: 8px; }
+  .skill { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; background: var(--panel); border-radius: 16px; padding: 10px 12px; }
+  .skill .lv { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 16px; line-height: 1; }
+  .skill .lv small { display: block; font-size: 9px; font-weight: 600; letter-spacing: .06em; }
+  .skill .nm { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; }
+  .skill .nm span { font-weight: 500; font-size: 12px; color: var(--muted); }
+  .skill .xp { height: 7px; border-radius: 6px; background: rgba(0, 0, 0, .06); overflow: hidden; margin-top: 5px; }
+  .skill .xp i { display: block; height: 100%; border-radius: 6px; }
+  .skill p { margin: 3px 0 0; font-size: 12px; color: var(--muted); }
+  .counts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .count { background: var(--panel); border-radius: 14px; padding: 10px 8px; text-align: center; }
+  .count b { display: block; font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
+  .count span { font-size: 11px; color: var(--muted); line-height: 1.2; display: block; }
+  .rete { position: relative; border-radius: 18px; overflow: hidden; background: radial-gradient(circle at 50% 40%, #FFFDF7, #F4EDE2); height: 340px; }
+  .rete svg { width: 100%; height: 100%; display: block; touch-action: none; }
+  .rete .vuota { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); font-size: 13.5px; }
+  .rt-et { font: 600 10.5px var(--font-ui); fill: var(--ink-2); text-anchor: middle; paint-order: stroke; stroke: #FFFDF7; stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none; }
+  .rt-nodo { cursor: pointer; } .rt-nodo.spento { opacity: .25; } .rt-filo.spento { opacity: .08; }
+  .rt-filo { fill: none; stroke-linecap: round; opacity: .55; transition: opacity .2s; }
+  .legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); }
+  .legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  .filters { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .filters button { flex: none; font-size: 12.5px; padding: 5px 11px; background: var(--panel); border: 0; box-shadow: none; }
+  .filters button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .feed2 { display: grid; gap: 2px; }
+  .feed2 .day { font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 10px 0 4px; }
+  .feed2 .row { display: grid; grid-template-columns: 40px 1fr; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--panel); }
+  .feed2 time { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 2px; }
+  .feed2 p { margin: 3px 0 0; font-size: 14px; line-height: 1.4; }
+  .feed2 p em { display: block; font-style: normal; color: var(--muted); font-size: 13px; margin-top: 1px; }
+  .lab { display: inline-flex; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: .01em; }
+  .c-mint { background: var(--mint-bg); color: var(--mint-ink); } .c-lilac { background: var(--lilac-bg); color: var(--lilac-ink); } .c-yellow { background: var(--yellow-bg); color: var(--yellow-ink); }
+  .c-sky { background: var(--sky-bg); color: var(--sky-ink); } .c-coral { background: var(--coral-bg); color: var(--coral-ink); } .c-pink { background: var(--pink-bg); color: var(--pink-ink); } .c-grey { background: var(--grey-bg); color: var(--ink-2); }
+  .gallery .paper { border-radius: 10px; background: #FBF8EE; }
+  .card, .plate { background: var(--card); border: 0; border-radius: 22px; box-shadow: 0 10px 30px rgba(60, 50, 30, .16); }
+  .kbtn { background: var(--ink); color: #fff; border: 0; border-radius: 999px; padding: 10px 18px; font-weight: 700; }
+  textarea, .sheet input[type=text], .sheet input[type=password], .labrow select { background: var(--paper); border: 1.5px solid var(--line); border-radius: 14px; font-family: var(--font-ui); }
+  .ilist div { background: var(--panel); border: 0; border-radius: 14px; }
+  .field { background: var(--panel); border: 0; }
+  .tabs { flex-wrap: wrap; }
+  .tabs .chip { background: var(--panel); border: 0; box-shadow: none; }
+  .tabs .chip[aria-pressed="true"], .filters button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .pager button { background: var(--panel); border: 0; box-shadow: none; }
+  .chips .chip { background: var(--panel); border: 0; }
+  @media (max-width: 600px) { .views { bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); } .card { bottom: 150px; } }
 </style>
 </head>
 <body>
@@ -197,25 +291,40 @@
 <div id="bubble" class="glass" style="opacity:0"></div>
 <div class="banner glass" id="banner"></div>
 <div class="walk" id="walk"><span></span><button data-k="w">▲</button><span></span><button data-k="a">◀</button><button data-k="s">▼</button><button data-k="d">▶</button></div>
-<nav class="dock glass" aria-label="Azioni">
-  <button data-open="diario"><i>📖</i>Diario</button>
-  <button data-open="mente"><i>🌱</i>Kōki</button>
-  <button data-open="disegni"><i>🖍️</i>Disegni</button>
-  <button data-open="bottiglia"><i>🍾</i>Bottiglia</button>
-  <button data-open="parla"><i>🏮</i>Parla</button>
-  <button data-open="lab"><i>🧪</i>Laboratorio</button>
-</nav>
+<button class="pallino" id="pallino" type="button" aria-label="Apri le schede di Kōki" aria-expanded="false"><svg id="pal-rings" viewBox="0 0 50 50"></svg></button>
 <section class="plate card" id="card" hidden aria-live="polite"></section>
 
-<section class="sheet glass" id="s-diario"><h2><span id="d-title">Il diario di Kōki</span> <button data-close>×</button></h2><div class="body">
+<section class="sheet" id="s-tutto" aria-label="Le schede di Kōki">
+ <div class="sh-head"><div><div class="eyebrow" id="sh-eta">L'esperimento</div><h1>Kōki <span class="jp">好奇</span></h1></div><button class="x" data-close aria-label="Chiudi">×</button></div>
+ <div class="body">
+  <details class="acc" data-sez="oggi" open><summary><i class="pal" style="--c:var(--sky-bg)">☁️</i><span class="t"><b>Come sta</b><small id="su-oggi"></small></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary><div class="cb" id="sez-oggi"></div></details>
+  <details class="acc" data-sez="stats"><summary><i class="pal" style="--c:var(--mint-bg)">✦</i><span class="t"><b>Statistiche</b><small id="su-stats"></small></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary><div class="cb" id="sez-stats"></div></details>
+  <details class="acc" data-sez="mente"><summary><i class="pal" style="--c:var(--lilac-bg)">◎</i><span class="t"><b>La sua mente</b><small id="su-mente"></small></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary><div class="cb" id="sez-mente"><div class="rete" id="rete"><svg id="rete-svg" aria-label="La rete dei suoi pensieri"></svg></div><div class="legenda"><span><i style="background:#B9A3EE"></i>idee</span><span><i style="background:#8EC5E8"></i>posti</span><span><i style="background:#F2CF6B"></i>cose</span><span><i style="background:#F2A48F"></i>emozioni</span></div><div id="rete-info"></div></div></details>
+  <details class="acc" data-sez="pensieri"><summary><i class="pal" style="--c:var(--yellow-bg)">✎</i><span class="t"><b>Pensieri e azioni</b><small id="su-pensieri"></small></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary><div class="cb" id="sez-pensieri"><div class="filters" id="filters"></div><div class="feed2" id="feed2"></div></div></details>
+  <details class="acc" data-sez="diario"><summary><i class="pal" style="--c:var(--coral-bg)">📖</i><span class="t"><b>Diario e quaderno</b><small id="su-diario"></small></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary><div class="cb" id="sez-diario">
   <div class="tabs"><button class="chip" data-dt="koki" aria-pressed="true">Scritto da Kōki</button><button class="chip" data-dt="oss" aria-pressed="false">Quaderno dell'osservatore</button><button class="chip" data-dt="int" aria-pressed="false">Interviste</button></div>
   <div class="pager"><button id="d-prev">← prima</button><span id="d-idx" class="muted"></span><button id="d-next">dopo →</button></div>
   <div class="book" id="d-page"></div>
   <div class="field" id="o-page" hidden></div>
   <div id="o-traits" hidden></div>
   <div class="field" id="i-page" hidden></div>
-</div></section>
-<section class="sheet glass" id="s-lab"><h2>Laboratorio <button data-close>×</button></h2><div class="body">
+</div></details>
+  <details class="acc" data-sez="disegni"><summary><i class="pal" style="--c:var(--pink-bg)">🖍️</i><span class="t"><b>Disegni</b><small id="su-disegni"></small></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary><div class="cb" id="sez-disegni">
+  <div class="gallery" id="g-list"></div>
+</div></details>
+  <details class="acc" data-sez="cose"><summary><i class="pal" style="--c:var(--yellow-bg)">🫙</i><span class="t"><b>Le sue cose e le sue idee</b><small id="su-cose"></small></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary><div class="cb" id="sez-cose"><div id="sez-cose-in" style="display:grid;gap:12px"></div></div></details>
+  <details class="acc" data-sez="parla"><summary><i class="pal" style="--c:var(--sky-bg)">🏮</i><span class="t"><b>Parla con lui</b><small id="su-parla"></small></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary><div class="cb" id="sez-parla">
+  <p class="muted" style="margin:0">Per lui sei "il Custode", una voce gentile che a volte gli parla.</p>
+  <div class="chat" id="c-log"></div>
+  <form id="c-form" style="display:grid; gap:8px"><input type="text" id="c-in" maxlength="400" placeholder="Scrivi qualcosa a Kōki…" autocomplete="off"><button class="kbtn" id="c-send">Invia</button></form>
+</div></details>
+  <details class="acc" data-sez="bottiglia"><summary><i class="pal" style="--c:var(--mint-bg)">🍾</i><span class="t"><b>Messaggio in bottiglia</b><small id="su-bottiglia"></small></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary><div class="cb" id="sez-bottiglia">
+  <p class="muted" style="margin:0">Scrivi un biglietto e affidalo al mare. Arriverà sulla spiaggia tra un po'. Kōki non sa chi lo manda.</p>
+  <textarea id="b-text" maxlength="500" placeholder="Caro Kōki…"></textarea>
+  <button class="kbtn" id="b-send">Affida al mare</button>
+  <p class="muted" id="b-state" style="margin:0"></p>
+</div></details>
+  <details class="acc" data-sez="lab"><summary><i class="pal" style="--c:var(--grey-bg)">🧪</i><span class="t"><b>Laboratorio</b><small id="su-lab"></small></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></summary><div class="cb" id="sez-lab">
   <p class="muted" style="margin:0">Fai accadere qualcosa sull'isola: un oggetto che compare, un evento, un cambiamento. Il Mondo lo rende reale e Kōki non saprà mai che sei stato tu. Ogni intervento resta segnato qui sotto, con data e ora.</p>
   <textarea id="l-text" maxlength="500" placeholder="Es.: compare uno specchio rotondo appoggiato a un sasso · stanotte cade una stella vicino al molo · si sente una musica lontana dal mare"></textarea>
   <div class="labrow"><select id="l-where"><option value="">Dove: decide il Mondo</option></select><button class="kbtn" id="l-send">Fai accadere</button></div>
@@ -228,23 +337,10 @@
   <h3>Far rinascere Kōki</h3>
   <p class="muted" style="margin:0">Ricomincia da zero: cancella ricordi, diario, quaderno, collezione, disegni, cose costruite e interventi. Il carattere e l'isola restano. Non si può annullare. Per sicurezza, scrivi RINASCI qui sotto.</p>
   <div class="labrow"><input type="text" id="r-in" placeholder="RINASCI" autocomplete="off" style="max-width:160px"><button class="chip" id="r-go">Fai rinascere</button></div>
-</div></section>
-<section class="sheet glass" id="s-mente"><h2>Kōki <button data-close>×</button></h2><div class="body" id="m-body"></div></section>
-<section class="sheet glass" id="s-disegni"><h2>I disegni di Kōki <button data-close>×</button></h2><div class="body">
-  <div class="gallery" id="g-list"></div>
-</div></section>
-<section class="sheet glass" id="s-bottiglia"><h2>Un messaggio in bottiglia <button data-close>×</button></h2><div class="body">
-  <p class="muted" style="margin:0">Scrivi un biglietto e affidalo al mare. Arriverà sulla spiaggia tra un po'. Kōki non sa chi lo manda.</p>
-  <textarea id="b-text" maxlength="500" placeholder="Caro Kōki…"></textarea>
-  <button class="kbtn" id="b-send">Affida al mare</button>
-  <p class="muted" id="b-state" style="margin:0"></p>
-</div></section>
-<section class="sheet glass" id="s-parla"><h2>Parla con Kōki <button data-close>×</button></h2><div class="body">
-  <p class="muted" style="margin:0">Per lui sei "il Custode", una voce gentile che a volte gli parla.</p>
-  <div class="chat" id="c-log"></div>
-  <form id="c-form" style="display:grid; gap:8px"><input type="text" id="c-in" maxlength="400" placeholder="Scrivi qualcosa a Kōki…" autocomplete="off"><button class="kbtn" id="c-send">Invia</button></form>
-</div></section>
-<section class="sheet glass" id="s-pass"><h2>Password</h2><div class="body">
+</div></details>
+ </div>
+</section>
+<section class="sheet" id="s-pass"><div class="sh-head"><div><div class="eyebrow">Privato</div><h1>Password</h1></div></div><div class="body">
   <p class="muted" style="margin:0">Il mondo di Kōki è privato. Inserisci la password che hai impostato su Cloudflare.</p>
   <form id="p-form" style="display:grid; gap:8px"><input type="password" id="p-in" autocomplete="current-password"><button class="kbtn">Entra</button></form>
 </div></section>
@@ -267,10 +363,10 @@
     { id: "collina", name: "La collina", kind: "zone", color: "#3D4E7A", x: -5.5, z: -17.5, r: 3.2, h: 2.7, bs: 1.12, build: "observatory" },
     { id: "bosco", name: "Il bosco", kind: "zone", color: "#4E7E4A", x: -10.5, z: -8.5, r: 3.4, h: 1.5, build: "woods" },
     { id: "orologio", name: "La torre dell'orologio", kind: "zone", color: "#B7934A", x: 11, z: 5.5, r: 3.3, h: 1.4, build: "clock" },
-    { id: "casetta", name: "La casetta chiusa", kind: "zone", color: "#6B4C7A", x: 15, z: -10.5, r: 3.3, h: 1.5, build: "closedhouse" },
+    { id: "casetta", name: "La casa stregata", kind: "zone", color: "#4A4250", x: 15, z: -10.5, r: 3.3, h: 1.5, build: "haunted" },
     { id: "orto", name: "L'orto", kind: "zone", color: "#8A6A3A", x: -8, z: 13, r: 3.5, h: 1.3, build: "orto" },
     { id: "casa", name: "La casa di Kōki", kind: "zone", color: "#7FB2D9", x: 4.5, z: 12.5, r: 3.5, h: 1.2, bface: 0.42, build: "kokihouse" },
-    { id: "lanterna", name: "La lanterna di pietra", kind: "zone", color: "#7F8A86", x: -17, z: 2.5, r: 3.3, h: 1.2, bs: 1.05, build: "stonelantern" },
+    { id: "pozzo", name: "Il pozzo", kind: "zone", color: "#7F8A86", x: -17, z: 2.5, r: 3.3, h: 1.2, bs: 1.05, build: "well" },
     { id: "giardino_giapponese", name: "Il giardino giapponese", kind: "zone", color: "#C8452F", x: 8.5, z: -16.5, r: 3.4, h: 1.5, build: "garden" }
   ];
   var PLAZA = { x: 0, z: 0, r: 3.6, h: 1.3 };
@@ -440,7 +536,7 @@
   AGENTS.forEach(function (a) { DISCS.push({ x: a.x, z: a.z, r: a.r, h: a.h, c: a.color }); });
   var BUMPS = [[MILL.x, MILL.z, 1.7, 2.6], [-20, -3, 1.2, 2.8], [18.5, -4, 1.1, 2.4], [-13, -15, 1.4, 2.6], [14, 16.5, 0.8, 2.2]];
   var PATHS = [], ROUTES = {}, FEATS = [], GARDENS = [];
-  var BEND = { collina: 0, bosco: 0.32, orologio: -0.3, casetta: 0.28, orto: -0.32, casa: 0.3, lanterna: 0, giardino_giapponese: -0.28 }, NP = 16;
+  var BEND = { collina: 0, bosco: 0.32, orologio: -0.3, casetta: 0.28, orto: -0.32, casa: 0.3, pozzo: 0, giardino_giapponese: -0.28 }, NP = 16;
   function curvePath(A, B, bend, id) {
     var dx = B.x - A.x, dz = B.z - A.z, L = Math.sqrt(dx * dx + dz * dz), ux = dx / L, uz = dz / L, ax = A.x + ux * (A.r - 0.3), az = A.z + uz * (A.r - 0.3), bx = B.x - ux * (B.r - 0.3), bz = B.z - uz * (B.r - 0.3), l2 = Math.sqrt((bx - ax) * (bx - ax) + (bz - az) * (bz - az)), c1x = ax + (bx - ax) / 3 - uz * bend * l2, c1z = az + (bz - az) / 3 + ux * bend * l2, c2x = ax + (bx - ax) * 2 / 3 + uz * bend * l2, c2z = az + (bz - az) * 2 / 3 - ux * bend * l2, pts = [], k;
     for (k = 0; k <= NP; k++) { var u = k / NP, iu = 1 - u, b0 = iu * iu * iu, b1 = 3 * iu * iu * u, b2 = 3 * iu * u * u, b3 = u * u * u; pts.push({ x: b0 * ax + b1 * c1x + b2 * c2x + b3 * bx, z: b0 * az + b1 * c1z + b2 * c2z + b3 * bz, h: A.h + (B.h - A.h) * u }); }
@@ -660,7 +756,7 @@
     return g;
   }
   function steam(parent, x, y, z, n, size) { for (var i = 0; i < n; i++) (function (i) { var m = new THREE.MeshStandardMaterial({ color: "#FFFFFF", transparent: true, opacity: 0.8 }), s = add(parent, rock(size, 1), m, x, y, z, true); anim.push(function (t) { var u = (t * 0.22 + i / n) % 1; s.position.set(x + u * 0.5 + Math.sin(t + i) * 0.08, y + u * 1.6, z); s.scale.setScalar(0.5 + u * 1.1); m.opacity = 0.8 * (1 - u); }); })(i); }
-  var TEL = {}, STONE_L = {};
+  var TEL = {}, STONE_L = {}, HAUNT = {}, SCARE = {}, PHONE = {};
   var BUILD = {
     // ---------- Kōki: la sua casetta tonda con il tetto di muschio ----------
     kokihouse: function (g) {
@@ -717,21 +813,29 @@
       [[-1.9, 1.1], [-2.4, -0.4], [2.3, -1.2]].forEach(function (p) { add(g, cyl(0.3, 0.36, 0.3, 9), mat("#8A5A3C"), p[0], 0.15, p[1]); add(g, cyl(0.29, 0.29, 0.02, 9), mat("#D9B98A"), p[0], 0.31, p[1], true); });
       [[-2.6, -1.8, 1.0], [2.7, 0.2, 0.9], [-0.9, -2.7, 1.1], [1.4, -2.5, 0.85]].forEach(function (p) { var t = G(g, p[0], 0, p[1]); t.scale.setScalar(p[2]); add(t, cyl(0.1, 0.15, 1.1, 6), mat(WOOD_D), 0, 0.55, 0); add(t, cone(0.75, 1.3, 7), mat("#2F7F5A"), 0, 1.5, 0); add(t, cone(0.55, 1.0, 7), mat("#3A8C62"), 0, 2.1, 0); });
     },
-    // ---------- la casetta chiusa: la porta non si apre mai, ma di notte una finestra è accesa ----------
-    closedhouse: function (g) {
-      var b = G(g, 0, 0, -0.6), wall = mat("#6B4C7A"), roofM = mat("#3A2B44");
-      add(b, box(1.9, 0.18, 1.6), mat(STONE_D), 0, 0.09, 0);
-      var f1 = G(b, 0, 0.18, 0, 0.05); add(f1, box(1.5, 1.6, 1.3), wall, 0, 0.8, 0);
-      var f2 = G(f1, 0.08, 1.6, 0, -0.12); f2.rotation.z = 0.06; add(f2, box(1.25, 1.2, 1.1), mat("#7A5A8A"), 0, 0.6, 0); add(f2, gable(1.45, 1.35, 0.9), roofM, 0, 1.2, 0);
-      var ch = add(f2, box(0.25, 0.7, 0.25), mat("#4A3A52"), 0.4, 1.7, -0.2); ch.rotation.z = -0.15;
-      door(f1, 0, 0, 0.66, "#2B2233", 0.52, 0.82);
-      var lock = G(f1, 0.12, 0.45, 0.74); add(lock, box(0.14, 0.14, 0.06), mat("#F2B705", GOLD), 0, 0, 0, true); add(lock, torus(0.05, 0.016, 5, 10, Math.PI), mat("#C9A43A", GOLD), 0, 0.08, 0, true);
-      seg(f1, [-0.3, 0.55, 0.75], [0.3, 0.3, 0.75], 0.02, mat("#8E8676"), true); seg(f1, [-0.3, 0.3, 0.75], [0.3, 0.55, 0.75], 0.02, mat("#8E8676"), true);
-      win(f1, -0.5, 1.1, 0.66, 0.3, 0.36); win(f2, 0, 0.6, 0.56, 0.36, 0.34); rwin(f2, 0, 1.45, 0.62, 0.14);
-      nightLight(f2, 0, 0.6, 0.9, "#C9A6FF", 0.9, 5);
-      for (var i = 0; i < 14; i++) add(f1, rock(0.13, 0), mat(i % 2 ? "#3F7A4A" : "#4E8E55"), -0.72 + sr(-0.04, 0.04), 0.2 + i * 0.13, sr(-0.5, 0.6)).scale.set(0.35, 1, 1);
-      var mb = G(g, 1.4, 0, 1.0, -0.3); add(mb, cyl(0.04, 0.04, 0.8, 6), mat(WOOD_D), 0, 0.4, 0); add(mb, box(0.34, 0.26, 0.24), smat("#3A2B44"), 0, 0.9, 0); var letter = add(mb, box(0.22, 0.02, 0.14), mat("#FBF8EE"), 0, 0.95, 0.15, true); letter.rotation.x = 0.4;
-      [[-1.6, 0.8], [1.8, -0.6], [-1.3, -1.5]].forEach(function (p) { var t = G(g, p[0], 0, p[1]); seg(t, [0, 0, 0], [0.1, 1.1, 0], 0.07, mat("#3A2618"), false, 0.04); seg(t, [0.1, 1.1, 0], [-0.3, 1.5, 0.1], 0.03, mat("#3A2618")); seg(t, [0.1, 1.1, 0], [0.4, 1.45, -0.1], 0.03, mat("#3A2618")); });
+    // ---------- la casa stregata: storta, finestre rotte, porta sbarrata, luci bianche di notte ----------
+    haunted: function (g) {
+      var b = G(g, 0, 0, -0.7), wall = mat("#4A4250"), wall2 = mat("#3B3442"), roofM = mat("#26222B"), plank = mat("#6B5A48");
+      add(b, box(2.3, 0.2, 1.9), mat(STONE_D), 0, 0.1, 0);
+      var f1 = G(b, 0, 0.2, 0, 0.04); add(f1, box(1.9, 1.5, 1.5), wall, 0, 0.75, 0);
+      var f2 = G(f1, -0.1, 1.5, 0, -0.1); f2.rotation.z = -0.07; add(f2, box(1.6, 1.1, 1.3), wall2, 0, 0.55, 0); add(f2, gable(1.8, 1.5, 1.0), roofM, 0, 1.1, 0);
+      var tw = G(f1, 0.75, 1.5, 0.3, 0.2); add(tw, box(0.55, 1.6, 0.55), wall, 0, 0.8, 0); add(tw, cone(0.5, 0.9, 4), roofM, 0, 2.05, 0).rotation.y = Math.PI / 4;
+      var ch = add(f2, box(0.22, 0.6, 0.22), mat("#2E2A33"), -0.45, 1.5, -0.25); ch.rotation.z = 0.18;
+      door(f1, 0, 0, 0.76, "#1E1A22", 0.55, 0.85);
+      [[0.32, 0.18], [0.55, -0.22], [0.75, 0.12]].forEach(function (p) { var pl = add(f1, box(0.75, 0.09, 0.04), plank, 0, p[0], 0.8, true); pl.rotation.z = p[1]; });
+      HAUNT.wins = [];
+      [[f1, -0.6, 0.95, 0.76, 0.34, 0.4], [f1, 0.6, 0.95, 0.76, 0.34, 0.4], [f2, -0.35, 0.55, 0.66, 0.3, 0.34], [f2, 0.4, 0.55, 0.66, 0.3, 0.34], [tw, 0, 1.0, 0.29, 0.2, 0.3]].forEach(function (w) {
+        var m = new THREE.MeshStandardMaterial({ color: "#1A1820", emissive: "#E8F0FF", emissiveIntensity: 0, roughness: 0.6 });
+        add(w[0], box(w[4] + 0.08, w[5] + 0.08, 0.05), mat("#2A2530"), w[1], w[2], w[3], true); add(w[0], box(w[4], w[5], 0.07), m, w[1], w[2], w[3] + 0.01, true); HAUNT.wins.push(m);
+      });
+      seg(f2, [0.25, 0.4, 0.68], [0.55, 0.7, 0.68], 0.012, mat("#C9C2D6"), true); seg(f2, [0.55, 0.4, 0.68], [0.3, 0.68, 0.68], 0.012, mat("#C9C2D6"), true);
+      HAUNT.light = nightLight(f1, 0, 1.0, 1.0, "#DDE6FF", 0.7, 6);
+      var pc = G(b, 0, 0.2, 1.0); add(pc, box(1.9, 0.06, 0.45), plank, 0, 0.02, 0); [-0.85, 0.85].forEach(function (x) { add(pc, cyl(0.04, 0.04, 0.9, 5), plank, x, 0.45, 0.18); }); add(pc, box(2.0, 0.05, 0.55), roofM, 0, 0.92, 0.05);
+      var rk = G(pc, 0.5, 0.06, 0.05, -0.4); add(rk, box(0.32, 0.04, 0.3), plank, 0, 0.25, 0); add(rk, box(0.32, 0.4, 0.04), plank, 0, 0.45, -0.14); add(rk, torus(0.17, 0.02, 4, 10, Math.PI), plank, 0, 0.05, 0).rotation.y = Math.PI / 2;
+      anim.push(function (t) { rk.rotation.x = Math.sin(t * 1.3) * 0.12; });
+      var gate = G(g, 0, 0, 2.2); for (var i = -3; i <= 3; i++) { if (i === 0) continue; add(gate, box(0.05, 0.7 + (i % 2) * 0.12, 0.05), mat("#2A2530"), i * 0.28, 0.38, 0); } seg(gate, [-0.85, 0.55, 0], [0.85, 0.5, 0], 0.02, mat("#2A2530"));
+      [[-1.8, 0.6], [1.9, -0.5], [-1.5, -1.6], [1.6, 1.4]].forEach(function (p, j) { var t = G(g, p[0], 0, p[1]); seg(t, [0, 0, 0], [0.12, 1.4, 0], 0.08, mat("#2A2018"), false, 0.04); seg(t, [0.12, 1.4, 0], [-0.4, 1.9, 0.12], 0.035, mat("#2A2018")); seg(t, [0.1, 1.1, 0], [0.55, 1.6, -0.1], 0.035, mat("#2A2018")); seg(t, [-0.3, 1.8, 0.1], [-0.5, 2.15, -0.1], 0.02, mat("#2A2018")); });
+      for (i = 0; i < 6; i++) add(g, cyl(0.06, 0.08, 0.35, 5), mat("#8E8A92"), -1.2 + i * 0.5, 0.17, -2.2 + (i % 2) * 0.3).rotation.z = (i % 3 - 1) * 0.2;
     },
     // ---------- l'orto ----------
     orto: function (g) {
@@ -741,7 +845,7 @@
         else if (r === 1) { add(b, cone(0.12, 0.3, 5), mat("#4E9E5E"), x, 0.33, z); }
         else if (r === 2) { add(b, ball(0.16, 8), smat("#6FBF73"), x, 0.28, z).scale.y = 0.7; }
         else { add(b, cyl(0.015, 0.015, 0.6, 4), mat(WOOD_D), x, 0.48, z); add(b, ball(0.07, 6), smat("#D8482F"), x + 0.05, 0.5, z, true); } } }
-      var sc = G(g, 1.9, 0, 1.0, -0.6); add(sc, cyl(0.04, 0.04, 1.6, 6), mat(WOOD_D), 0, 0.8, 0); add(sc, box(1.0, 0.05, 0.05), mat(WOOD_D), 0, 1.2, 0); add(sc, box(0.4, 0.55, 0.22), mat("#5B8FB9"), 0, 1.05, 0); add(sc, ball(0.18, 10), smat("#E9D3A0"), 0, 1.5, 0); add(sc, cone(0.32, 0.28, 10), mat("#D8B060"), 0, 1.68, 0); var sh = add(sc, cyl(0.3, 0.3, 0.02, 12), mat("#D8B060"), 0, 1.57, 0, true);
+      var sc = G(g, 1.9, 0, 1.0, -0.6); SCARE.g = sc; add(sc, cyl(0.04, 0.04, 1.6, 6), mat(WOOD_D), 0, 0.8, 0); add(sc, box(1.0, 0.05, 0.05), mat(WOOD_D), 0, 1.2, 0); add(sc, box(0.4, 0.55, 0.22), mat("#5B8FB9"), 0, 1.05, 0); add(sc, ball(0.18, 10), smat("#E9D3A0"), 0, 1.5, 0); add(sc, cone(0.32, 0.28, 10), mat("#D8B060"), 0, 1.68, 0); var sh = add(sc, cyl(0.3, 0.3, 0.02, 12), mat("#D8B060"), 0, 1.57, 0, true);
       anim.push(function (t) { sc.rotation.z = Math.sin(t * 0.9) * 0.04; });
       var gh = G(g, -1.8, 0, 1.3, 0.4), glass = new THREE.MeshStandardMaterial({ color: "#CFEFF5", transparent: true, opacity: 0.4, roughness: 0.1 });
       add(gh, box(1.1, 0.8, 0.8), glass, 0, 0.4, 0, true); add(gh, gable(1.12, 0.82, 0.4), glass, 0, 0.8, 0, true);
@@ -750,20 +854,21 @@
       var wc = G(g, 1.2, 0, -2.0, 0.8); add(wc, cyl(0.15, 0.17, 0.3, 10), smat("#2F8F9E"), 0, 0.15, 0); seg(wc, [0.12, 0.15, 0], [0.35, 0.35, 0], 0.025, smat("#2F8F9E"));
       for (k = 0; k < 12; k++) { var a = k / 12 * 6.28; if (Math.cos(a) > 0.9) continue; add(g, box(0.06, 0.45, 0.06), mat("#D9C7A0"), Math.sin(a) * 2.75, 0.22, Math.cos(a) * 2.75 - 0.3); }
     },
-    // ---------- la lanterna di pietra: certe notti si accende da sola ----------
-    stonelantern: function (g) {
+    // ---------- il pozzo che respira ----------
+    well: function (g) {
       var b = G(g, 0, 0, -0.3), st = mat("#9A9690"), stD = mat("#7F7B74");
-      add(b, cyl(0.55, 0.65, 0.25, 8), stD, 0, 0.12, 0);
-      add(b, cyl(0.18, 0.24, 1.1, 8), st, 0, 0.8, 0);
-      add(b, cyl(0.45, 0.35, 0.2, 6), stD, 0, 1.45, 0);
-      var box1 = add(b, box(0.6, 0.5, 0.6), st, 0, 1.8, 0);
-      var fl = add(b, box(0.32, 0.3, 0.62), new THREE.MeshStandardMaterial({ color: "#2A2620", emissive: "#FFB050", emissiveIntensity: 0 }), 0, 1.8, 0, true); STONE_L.window = fl;
-      add(b, box(0.62, 0.3, 0.32), fl.material, 0, 1.8, 0, true);
-      var roof = add(b, cone(0.75, 0.5, 6), stD, 0, 2.3, 0); add(b, ball(0.12, 8), st, 0, 2.6, 0);
-      STONE_L.light = new THREE.PointLight("#FFB050", 0, 7, 2); STONE_L.light.position.set(0, 1.8, 0); b.add(STONE_L.light);
-      STONE_L.flame = add(b, cone(0.07, 0.18, 6), matFire, 0, 1.78, 0, true); STONE_L.flame.visible = false;
-      for (var i = 0; i < 9; i++) { var a = i / 9 * 6.28; add(g, rock(sr(0.25, 0.42), 1), mat(pickOf(["#8E8A7E", "#A39F92", "#7B786E"])), Math.sin(a) * 2.2, 0.15, Math.cos(a) * 2.2 - 0.3).scale.y = 0.7; add(g, rock(0.16, 1), seasonMats.hedge, Math.sin(a) * 2.2, 0.35, Math.cos(a) * 2.2 - 0.3).scale.y = 0.4; }
-      [[-1.2, 1.0], [1.3, 0.8]].forEach(function (p) { var s = add(g, cyl(0.3, 0.32, 0.12, 8), mat(STONE), p[0], 0.06, p[1]); });
+      for (var i = 0; i < 12; i++) { var a = i / 12 * 6.28, r = add(b, box(0.42, 0.3, 0.26), i % 2 ? st : stD, Math.cos(a) * 0.72, 0.15, Math.sin(a) * 0.72); r.rotation.y = -a; var r2 = add(b, box(0.42, 0.3, 0.26), i % 2 ? stD : st, Math.cos(a + 0.26) * 0.72, 0.45, Math.sin(a + 0.26) * 0.72); r2.rotation.y = -a - 0.26; }
+      add(b, cyl(0.62, 0.62, 0.62, 16), mat("#07080A"), 0, 0.3, 0, true);
+      add(b, torus(0.74, 0.07, 6, 18), st, 0, 0.62, 0).rotation.x = Math.PI / 2;
+      [-0.7, 0.7].forEach(function (x) { add(b, box(0.1, 1.6, 0.1), mat(WOOD_D), x, 1.1, 0); });
+      [-1, 1].forEach(function (sd) { var rf = add(b, box(1.7, 0.06, 0.62), mat("#5E3E28"), 0, 1.92, sd * 0.27); rf.rotation.x = sd * 0.6; });
+      add(b, box(1.75, 0.08, 0.08), mat(WOOD_D), 0, 2.1, 0);
+      add(b, cyl(0.06, 0.06, 1.4, 8), mat(WOOD), 0, 1.55, 0).rotation.z = Math.PI / 2;
+      var rope = G(b, 0, 1.5, 0); seg(rope, [0, 0, 0], [0, -0.75, 0], 0.012, mat("#C9B48A"), true);
+      var bucket = add(rope, cyl(0.13, 0.1, 0.18, 8), mat("#7A5A3C"), 0, -0.85, 0); anim.push(function (t) { rope.rotation.z = Math.sin(t * 0.7) * 0.06; });
+      // il respiro: una nebbiolina che sale piano dal fondo
+      for (i = 0; i < 4; i++) (function (i) { var m = new THREE.MeshStandardMaterial({ color: "#DCE3E8", transparent: true, opacity: 0 }), pf = add(b, ball(0.18, 6), m, 0, 0.5, 0, true); anim.push(function (t) { var u = ((t * 0.18) + i / 4) % 1, br = 0.5 + 0.5 * Math.sin(t * 0.9); pf.position.set(Math.sin(i * 2 + t * 0.3) * 0.15, 0.5 + u * 1.1, Math.cos(i * 2) * 0.15); pf.scale.setScalar(0.6 + u * 1.2); m.opacity = (1 - u) * 0.35 * br; }); })(i);
+      for (i = 0; i < 16; i++) { var aa = i / 16 * 6.28, rr2 = 1.4 + (i % 3) * 0.25; add(g, cone(0.06, 0.55 + (i % 4) * 0.12, 4), mat(i % 2 ? "#5E8E4A" : "#6E9E56"), Math.cos(aa) * rr2, 0.28, Math.sin(aa) * rr2 - 0.3); }
     },
     // Sindaco: municipio dentro un albero gigante
     treehouse: function (g) {
@@ -903,7 +1008,20 @@
       [[-2.6, -1.4], [-2.8, -1.0], [-2.45, -0.95], [2.7, 0.7]].forEach(function (p) { var h = sr(1.3, 2.1); add(g, cyl(0.04, 0.05, h, 5), mat("#7FB36A"), p[0], h / 2, p[1]); add(g, cone(0.16, 0.4, 5), mat("#5DB56C"), p[0], h + 0.1, p[1]); });
     }
   };
-  AGENTS.forEach(function (a) { BUILD[a.build](zone(a)); });
+  // aggiunte strane dentro i luoghi: la casetta in miniatura nel bosco, il telefono sulla collina
+  var EXTRA = {
+    bosco: function (g) {
+      var m = G(g, 1.35, 0, 1.45, -0.5); m.scale.setScalar(0.32);
+      add(m, cyl(0.9, 0.95, 1.1, 14), mat("#F3E6C8"), 0, 0.55, 0); add(m, cone(1.15, 0.9, 14), mat("#6E9E56"), 0, 1.5, 0); add(m, box(0.42, 0.65, 0.06), mat("#8DBDE6"), 0, 0.33, 0.9, true); add(m, ball(0.16, 8), mat("#F3E6C8"), 0.4, 0.75, 0.86, true);
+      var sh = add(m, box(0.6, 0.05, 0.2), mat(WOOD), -0.55, 0.65, 0.88, true); for (var i = 0; i < 3; i++) add(m, ball(0.06, 6), mat(["#D8482F", "#F2B705", "#5B8FB9"][i]), -0.75 + i * 0.2, 0.72, 0.9, true);
+    },
+    collina: function (g) {
+      var t = G(g, 1.9, 0, 1.6, -0.9); add(t, cyl(0.05, 0.06, 1.5, 6), mat("#3A2A1E"), 0, 0.75, 0); add(t, box(0.2, 0.06, 0.06), mat("#3A2A1E"), 0, 1.4, 0);
+      var ph = G(t, 0, 1.05, 0.07); add(ph, box(0.24, 0.32, 0.12), mat("#1C1B1B"), 0, 0, 0); var cr = add(ph, box(0.28, 0.06, 0.07), mat("#2A2A2A"), 0, 0.2, 0.05, true); add(ph, cyl(0.07, 0.07, 0.03, 10), mat("#E9E2D6"), 0, -0.04, 0.07, true).rotation.x = Math.PI / 2;
+      PHONE.g = ph; PHONE.cornetta = cr; PHONE.light = nightLight(t, 0, 1.1, 0.3, "#FFE7B0", 0.0, 3);
+    }
+  };
+  AGENTS.forEach(function (a) { var zg = zone(a); BUILD[a.build](zg); if (EXTRA[a.id]) EXTRA[a.id](zg); });
 
   // ---------- piazza ----------
   var plaza = G(world, PLAZA.x, PLAZA.h, PLAZA.z), notes = {};
@@ -1260,7 +1378,7 @@
     [-1, 1].forEach(function (s) { add(cat, ball(0.02, 5), mat("#5F5C55"), s * 0.055, 0.55, 0.19, true); });
   })();
   cat.scale.setScalar(1.15); world.add(cat);
-  var CAT_AT = { piazza: [-1.6, 1.4], laghetto: [-1.4, -2.3], giardino: [0.2, -2.6], bosco: [1.5, 1.2], spiaggia: [-1.5, 0.8], molo: [-1.2, -1.5], collina: [1.2, 1.0], orto: [1.6, 0.8], orologio: [1.4, -1.2], lanterna: [1.4, 0.9], casetta: [-1.4, 1.2], giardino_giapponese: [1.4, 1.0] };
+  var CAT_AT = { piazza: [-1.6, 1.4], laghetto: [-1.4, -2.3], giardino: [0.2, -2.6], bosco: [1.5, 1.2], spiaggia: [-1.5, 0.8], molo: [-1.2, -1.5], collina: [1.2, 1.0], orto: [1.6, 0.8], orologio: [1.4, -1.2], pozzo: [1.4, 0.9], casetta: [-1.4, 1.2], giardino_giapponese: [1.4, 1.0] };
   var prints = new THREE.Group();
   (function () { var pm = mat("#C9B07E"); for (var i = 0; i < 10; i++) { var d = add(prints, cyl(0.13, 0.13, 0.02, 8), pm, (i % 2 ? 0.24 : -0.24), 0.01, -i * 0.6, true); d.scale.z = 1.25; } })();
   world.add(prints);
@@ -1271,6 +1389,49 @@
     add(bottle, cyl(0.035, 0.035, 0.06, 8), mat("#B58B5A"), 0.31, 0, 0).rotation.z = Math.PI / 2; add(bottle, box(0.2, 0.05, 0.08), mat("#F6EFDF"), 0, 0, 0, true);
   })();
   world.add(bottle);
+  // le orme: una scia dal mare fino al posto dove arrivano
+  var ormeG = new THREE.Group(), ormePool = [], ormeKey = "";
+  (function () { var pm = mat("#8C7A5E"); for (var i = 0; i < 220; i++) { var d = add(ormeG, cyl(0.11, 0.11, 0.02, 7), pm, 0, 0, 0, true); d.scale.z = 1.3; d.visible = false; ormePool.push(d); } })();
+  world.add(ormeG);
+  function applyOrme(o) {
+    var key = o ? o.a + o.giorno : ""; if (key === ormeKey) return; ormeKey = key;
+    ormePool.forEach(function (d) { d.visible = false; }); if (!o || !SPOT[o.a]) return;
+    var P = path("spiaggia", o.a), sea = { x: BEACH.x * 1.08, z: BEACH.z * 1.08 };
+    P = { pts: [sea].concat(P.pts), L: [0], total: 0 }; for (var i = 1; i < P.pts.length; i++) P.L.push(P.L[i - 1] + Math.hypot(P.pts[i].x - P.pts[i - 1].x, P.pts[i].z - P.pts[i - 1].z)); P.total = P.L[P.L.length - 1] || 1;
+    var n = Math.min(ormePool.length, Math.floor(P.total / 0.5));
+    for (i = 0; i < n; i++) { var q = along(P, i / n), side = i % 2 ? 0.16 : -0.16, x = q.x + Math.cos(q.h) * side, z = q.z - Math.sin(q.h) * side, d = ormePool[i]; d.position.set(x, heightAt(x, z) + 0.015, z); d.rotation.y = q.h; d.visible = true; }
+  }
+  // i fantasmi: figure bianche che fluttuano di notte, quando escono
+  var ghosts = new THREE.Group(), ghostList = []; ghosts.visible = false; world.add(ghosts);
+  (function () {
+    for (var i = 0; i < 3; i++) {
+      var gm = new THREE.MeshStandardMaterial({ color: "#F4F7FF", emissive: "#C8D6FF", emissiveIntensity: 0.6, transparent: true, opacity: 0.55, depthWrite: false }), gh = new THREE.Group();
+      var head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 14, 10, 0, Math.PI * 2, 0, Math.PI / 1.6), gm); head.position.y = 0.55; gh.add(head);
+      var skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.36, 0.5, 14, 1, true), gm); skirt.position.y = 0.25; gh.add(skirt);
+      [-1, 1].forEach(function (s2) { var e = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 5), new THREE.MeshBasicMaterial({ color: "#2A2440" })); e.position.set(s2 * 0.09, 0.62, 0.25); gh.add(e); });
+      gh.add(new THREE.PointLight("#DDE6FF", 0.5, 3, 2));
+      ghosts.add(gh); ghostList.push({ g: gh, p: i * 2.1, r: 1.6 + i * 0.5 });
+    }
+  })();
+  var ghostAt = null;
+  anim.push(function (t) {
+    var on = ghostAt && nightK > 0.4; ghosts.visible = !!on; if (!on) return;
+    ghostList.forEach(function (o) { var a = t * 0.25 + o.p, x = ghostAt.x + Math.cos(a) * o.r, z = ghostAt.z + Math.sin(a) * o.r; o.g.position.set(x, heightAt(x, z) + 0.5 + Math.sin(t * 1.4 + o.p) * 0.18, z); o.g.rotation.y = -a; o.g.children[1].scale.x = 1 + Math.sin(t * 3 + o.p) * 0.06; });
+  });
+  anim.push(function (t) { if (!HAUNT.wins) return; var k = nightK; HAUNT.wins.forEach(function (m, i) { m.emissiveIntensity = k * (0.25 + 0.75 * Math.max(0, Math.sin(t * (0.7 + i * 0.37) + i * 2))); }); });
+  // la porta in piedi da sola in mezzo al prato
+  (function () {
+    var dx = MEADOW.x - 1.2, dz = MEADOW.z + 1.4, d = G(world, dx, heightAt(dx, dz), dz, 0.6);
+    add(d, box(0.08, 1.6, 0.12), mat(WOOD_D), -0.42, 0.8, 0); add(d, box(0.08, 1.6, 0.12), mat(WOOD_D), 0.42, 0.8, 0); add(d, box(0.92, 0.1, 0.12), mat(WOOD_D), 0, 1.62, 0);
+    var leaf = G(d, -0.38, 0, 0); add(leaf, box(0.76, 1.52, 0.06), mat("#A8C6D8"), 0.38, 0.78, 0); add(leaf, ball(0.04, 6), mat("#F2B705", GOLD), 0.68, 0.8, 0.05, true);
+    anim.push(function (t) { leaf.rotation.y = Math.max(0, Math.sin(t * 0.13)) * 0.35; });
+  })();
+  // il laghetto di notte riflette stelle che in cielo non ci sono
+  var lakeStars = (function () { var n = 26, pos = new Float32Array(n * 3); for (var i = 0; i < n; i++) { var a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * (POND.r - 0.2); pos[i * 3] = POND.x + Math.cos(a) * r; pos[i * 3 + 1] = POND.level + 0.03; pos[i * 3 + 2] = POND.z + Math.sin(a) * r; } var gg = new THREE.BufferGeometry(); gg.setAttribute("position", new THREE.BufferAttribute(pos, 3)); var pm = new THREE.Points(gg, new THREE.PointsMaterial({ color: "#FFF6D8", size: 0.09, transparent: true, opacity: 0, depthWrite: false })); world.add(pm); return pm; })();
+  anim.push(function (t) { lakeStars.material.opacity = nightK * (0.7 + 0.3 * Math.sin(t * 2.3)); });
+  // il telefono che squilla
+  var phoneRing = false;
+  anim.push(function (t) { if (!PHONE.g) return; var on = phoneRing; PHONE.cornetta.position.y = 0.2 + (on ? Math.abs(Math.sin(t * 30)) * 0.03 : 0); PHONE.g.rotation.z = on ? Math.sin(t * 40) * 0.05 : 0; if (PHONE.light) PHONE.light.intensity = on ? (Math.sin(t * 6) > 0 ? 1.2 : 0) : 0; });
 
   // ---------- le cose che Kōki (e il Mondo) cambiano sull'isola ----------
   var objGroup = new THREE.Group(); world.add(objGroup); var objKey = "";
@@ -1326,14 +1487,16 @@
     var Wd = STATE.mondo;
     var c = SPOT[Wd.gatto] || SPOT.piazza, off = CAT_AT[Wd.gatto] || [1, 1];
     cat.position.set(c.x + off[0], heightAt(c.x + off[0], c.z + off[1]), c.z + off[1]); cat.rotation.y = Math.atan2(c.x - cat.position.x, c.z - cat.position.z) + 0.6;
-    prints.visible = !!Wd.impronte;
+    prints.visible = false; applyOrme(Wd.orme);
+    ghostAt = Wd.fantasmi && Wd.fantasmi.fuori ? SPOT[Wd.fantasmi.luogo] || null : null;
+    phoneRing = !!Wd.telefono;
+    if (SCARE.g) { var tgt = SPOT[Wd.spaventa] || null; if (tgt) { var wp = new THREE.Vector3(); SCARE.g.getWorldPosition(wp); var q = new THREE.Quaternion(); SCARE.g.parent.getWorldQuaternion(q); var eu = new THREE.Euler().setFromQuaternion(q, "YXZ"); SCARE.g.rotation.y = Math.atan2(tgt.x - wp.x, tgt.z - wp.z) - eu.y; } }
     var bx = BEACH.x + 1.4, bz = BEACH.z + 0.9; prints.position.set(bx, heightAt(bx, bz) + 0.01, bz); prints.rotation.y = Math.atan2(-bx, -bz);
     bottle.visible = !!Wd.bottiglia; var ox = BEACH.x * 1.06, oz = BEACH.z * 1.06; bottle.position.set(ox, Math.max(0.05, heightAt(ox, oz) + 0.08), oz);
     var tel = Wd.telescopio || { montati: [], aggiustato: false };
     if (TEL.lens) { TEL.lens.visible = tel.montati.indexOf("lente") >= 0; TEL.screw.visible = tel.montati.indexOf("vite") >= 0; TEL.crank.visible = tel.montati.indexOf("manovella") >= 0; TEL.tube.rotation.z = tel.aggiustato ? 0.55 : -0.3; }
-    STONE_L.lit = !!Wd.lanterna;
     applyObjects(); applyHanging();
-    if ($("s-disegni").classList.contains("open")) renderGallery();
+    if (isOpen("disegni")) renderGallery();
   }
   anim.push(function (t) { if (!STONE_L.light) return; var on = STONE_L.lit && nightK > 0.4, f = 1 + Math.sin(t * 11) * 0.08; STONE_L.light.intensity = on ? 1.6 * f : 0; STONE_L.window.material.emissiveIntensity = on ? 1.4 * f : 0; STONE_L.flame.visible = on; });
 
@@ -1482,30 +1645,163 @@
     var k = STATE.koki, luogo = PLACE_NAME[k.luogo] || k.luogo, d = k.descrizione || "";
     $("doing").innerHTML = k.dorme ? "<b>Dorme</b> nella sua casetta" : "<b>" + esc(d.charAt(0).toUpperCase() + d.slice(1)) + "</b>" + (k.attivita && k.attivita.azione !== "vai" ? " · " + esc(luogo) : "");
     bubbleEl.innerHTML = k.dorme ? "💤 <small>sogna</small>" : esc(k.pensiero || "…") + (k.attivita && k.attivita.perche ? "<small>" + esc(k.attivita.perche) + "</small>" : "");
-    if ($("s-mente").classList.contains("open")) renderMind();
+    renderOpen(); drawPallino();
     $("b-state").textContent = STATE.mondo.bottigliaInViaggio ? "C'è una bottiglia in viaggio sulle onde." : STATE.mondo.bottiglia ? "La bottiglia è arrivata sulla spiaggia: Kōki non l'ha ancora aperta." : "";
     $("b-send").disabled = !!(STATE.mondo.bottigliaInViaggio || STATE.mondo.bottiglia);
   }
-  function bar(label, v) { return "<span>" + label + "</span><div class='bar'><i style='width:" + Math.round(Math.max(0, Math.min(1, v)) * 100) + "%'></i></div>"; }
-  function renderMind() {
-    var k = STATE.koki, b = k.corpo, counts = {};
+  // ===================== LE SCHEDE (sezioni a fisarmonica) =====================
+  var SHEET = $("s-tutto");
+  function isOpen(k) { var d = document.querySelector("details[data-sez='" + k + "']"); return SHEET.classList.contains("open") && !!d && d.open; }
+  function pct(v) { return Math.round(Math.max(0, Math.min(1, v || 0)) * 100); }
+  // anelli concentrici, come quelli dell'orologio
+  function ringsSVG(vals, size, stroke, gap) {
+    var c = size / 2, out = "<svg viewBox='0 0 " + size + " " + size + "' width='" + size + "' height='" + size + "' aria-hidden='true'>";
+    vals.forEach(function (x, i) {
+      var r = c - stroke / 2 - i * (stroke + gap), C = 2 * Math.PI * r, v = Math.max(0.001, Math.min(1, x.v || 0));
+      out += "<circle cx='" + c + "' cy='" + c + "' r='" + r + "' fill='none' stroke='" + x.c + "' stroke-opacity='.2' stroke-width='" + stroke + "'/>" +
+        "<circle cx='" + c + "' cy='" + c + "' r='" + r + "' fill='none' stroke='" + x.c + "' stroke-width='" + stroke + "' stroke-linecap='round' stroke-dasharray='" + (C * v).toFixed(1) + " " + C.toFixed(1) + "' transform='rotate(-90 " + c + " " + c + ")'/>";
+    });
+    return out + "</svg>";
+  }
+  var RC = { energia: "#5CC98E", gioia: "#F2BE3C", meraviglia: "#9C7FE6", tristezza: "#6E9EE0", paura: "#EE7F66", coraggio: "#F09A45", curiosita: "#4FB9D9", creare: "#EE8DB6", compagnia: "#C9A574" };
+  function emoOf(k) { return k.emo || { gioia: .4, meraviglia: .4, tristezza: .1 }; }
+  function drawPallino() {
+    if (!STATE) return; var k = STATE.koki, e = emoOf(k);
+    $("pal-rings").outerHTML = ringsSVG([{ v: k.corpo.energia, c: RC.energia }, { v: e.gioia, c: RC.gioia }, { v: e.meraviglia, c: RC.meraviglia }], 50, 5.5, 1.5).replace("<svg ", "<svg id='pal-rings' ");
+  }
+  function renderOggi() {
+    var k = STATE.koki, b = k.corpo, e = emoOf(k), luogo = PLACE_NAME[k.luogo] || k.luogo, d = k.descrizione || "";
+    var big = [{ n: "Energia", v: b.energia, c: RC.energia }, { n: "Felicità", v: e.gioia, c: RC.gioia }, { n: "Meraviglia", v: e.meraviglia, c: RC.meraviglia }];
+    var mini = [{ n: "Tristezza", v: e.tristezza, c: RC.tristezza }, { n: "Paura", v: b.paura, c: RC.paura }, { n: "Coraggio al buio", v: k.coraggio, c: RC.coraggio }, { n: "Voglia di scoprire", v: b.curiosita, c: RC.curiosita }, { n: "Voglia di creare", v: b.espressione, c: RC.creare }, { n: "Bisogno di compagnia", v: b.socialita, c: RC.compagnia }];
+    $("sez-oggi").innerHTML =
+      "<div class='panel2 now'><b>" + (k.dorme ? "Dorme nella sua casetta" : esc(d.charAt(0).toUpperCase() + d.slice(1)) + " · " + esc(luogo)) + "</b><p>" + (k.dorme ? "💤" : "«" + esc(k.pensiero || "…") + "»") + "</p></div>" +
+      "<div class='rings'>" + ringsSVG(big, 132, 15, 3) + "<div class='legend'>" + big.map(function (x) { return "<div><i style='background:" + x.c + "'></i>" + x.n + "<span>" + pct(x.v) + "%</span></div>"; }).join("") + "</div></div>" +
+      "<div class='minis'>" + mini.map(function (x) { return "<div class='mini'>" + ringsSVG([x], 58, 7, 0) + "<b>" + pct(x.v) + "%</b>" + x.n + "</div>"; }).join("") + "</div>" +
+      (DEMO ? "" : "<p class='muted' style='margin:0;font-size:12.5px'>Cervello: " + STATE.cervello.chiamateOggi + " pensieri su " + STATE.cervello.massimo + " disponibili oggi.</p>");
+  }
+  // statistiche "da gioco di ruolo": abilità che crescono di livello con quello che fa
+  function lvl(xp) { var L = Math.floor(Math.sqrt(xp / 8)) + 1, lo = 8 * (L - 1) * (L - 1), hi = 8 * L * L; return { L: L, p: (xp - lo) / (hi - lo), xp: Math.round(xp), next: hi }; }
+  function renderStats() {
+    var k = STATE.koki, st = k.stats || {}, visti = Object.keys(st.visti || {}).length, days = Math.max(1, Math.floor((Date.now() - k.nato) / 86400000) + 1);
+    var sk = [
+      { n: "Esploratore", d: "posti visitati, strade fatte", xp: (st.passi || 0) + visti * 5, c: "mint" },
+      { n: "Osservatore", d: "cose guardate da vicino, stelle", xp: (st.osservazioni || 0) * 2 + (st.stelle || 0) * 3, c: "sky" },
+      { n: "Raccoglitore", d: "piccole cose trovate", xp: (st.trovate || 0) * 4 + (k.inventario || []).length, c: "yellow" },
+      { n: "Creatore", d: "idee sue, costruzioni, disegni", xp: (st.libere || 0) * 2 + (st.creazioni || 0) * 5 + (st.disegni || 0) * 6, c: "coral" },
+      { n: "Coraggioso", d: "il buio affrontato", xp: Math.round((k.coraggio || 0) * 60) + (st.stelle || 0) * 2, c: "yellow" },
+      { n: "Sognatore", d: "sogni, diario, parole sue", xp: (st.sogni || 0) * 4 + (st.diari || 0) * 3 + (st.nomi || 0) * 5, c: "lilac" }
+    ];
+    var col = { mint: ["var(--mint-bg)", "var(--mint-ink)", "#5CC98E"], sky: ["var(--sky-bg)", "var(--sky-ink)", "#4FB9D9"], yellow: ["var(--yellow-bg)", "var(--yellow-ink)", "#F2BE3C"], coral: ["var(--coral-bg)", "var(--coral-ink)", "#EE7F66"], lilac: ["var(--lilac-bg)", "var(--lilac-ink)", "#9C7FE6"] };
+    var counts = [["Giorni di vita", days], ["Posti visti", visti + "/13"], ["Cose trovate", st.trovate || 0], ["Disegni", st.disegni || 0], ["Costruzioni", st.oggetti || 0], ["Stelle viste", st.stelle || 0], ["Sogni", st.sogni || 0], ["Parole sue", Object.keys(k.nomi || {}).length]];
+    $("sez-stats").innerHTML = "<div class='skills'>" + sk.map(function (x) { var l = lvl(x.xp), c = col[x.c]; return "<div class='skill'><div class='lv' style='background:" + c[0] + ";color:" + c[1] + "'><span><small>LIV</small>" + l.L + "</span></div><div><div class='nm'>" + x.n + "<span>" + l.xp + " / " + l.next + " xp</span></div><div class='xp'><i style='width:" + Math.round(l.p * 100) + "%;background:" + c[2] + "'></i></div><p>" + x.d + "</p></div></div>"; }).join("") + "</div>" +
+      "<div class='counts'>" + counts.map(function (c) { return "<div class='count'><b>" + c[1] + "</b><span>" + c[0] + "</span></div>"; }).join("") + "</div>";
+  }
+  // la rete dei suoi pensieri (come la Rete di Analyticam, ma in chiaro)
+  function needD3(cb) { if (window.d3) return cb(); var sc = document.createElement("script"); sc.src = "/d3.min.js"; sc.onload = cb; document.head.appendChild(sc); }
+  var reteSim = null;
+  function renderRete() {
+    if (DEMO) { drawRete({ nodi: [], legami: [] }); return; }
+    api("/api/mente").then(function (M) { needD3(function () { drawRete(M); }); }).catch(function () {});
+  }
+  function drawRete(M) {
+    var box = $("rete"), old = box.querySelector(".vuota"); if (old) old.remove();
+    if (reteSim) { reteSim.stop(); reteSim = null; }
+    if (!window.d3 || !M.nodi.length) { box.insertAdjacentHTML("beforeend", "<div class='vuota'>La rete nasce dai suoi pensieri: ogni volta che pensa a qualcosa, quella cosa diventa un nodo, e le cose a cui pensa insieme si collegano. Ancora è vuota.</div>"); if (window.d3) d3.select("#rete-svg").selectAll("*").remove(); return; }
+    var W = box.clientWidth || 340, H = box.clientHeight || 340, svg = d3.select("#rete-svg"); svg.selectAll("*").remove(); svg.attr("viewBox", [0, 0, W, H]);
+    var COL = { luogo: "#8EC5E8", cosa: "#F2CF6B", emozione: "#F2A48F", idea: "#B9A3EE" };
+    var nodes = M.nodi.map(function (n) { return Object.assign({ id: n.nome }, n); }), by = {}; nodes.forEach(function (n) { by[n.id] = n; });
+    var links = M.legami.map(function (l) { return { source: by[l.a], target: by[l.b], peso: l.peso }; });
+    var maxP = d3.max(nodes, function (n) { return n.peso; }) || 1, R = function (n) { return 5 + Math.sqrt(n.peso / maxP) * 13; };
+    var defs = svg.append("defs"), fl = defs.append("filter").attr("id", "rglow").attr("x", "-50%").attr("y", "-50%").attr("width", "200%").attr("height", "200%");
+    fl.append("feGaussianBlur").attr("stdDeviation", 3);
+    var g = svg.append("g");
+    svg.call(d3.zoom().scaleExtent([0.4, 3]).on("zoom", function (ev) { g.attr("transform", ev.transform); })).on("dblclick.zoom", null);
+    var filo = g.append("g").selectAll("path").data(links).join("path").attr("class", "rt-filo")
+      .attr("stroke", function (l) { return COL[l.source.tipo] || "#B9A3EE"; }).attr("stroke-width", function (l) { return 0.8 + Math.min(4, Math.log2(1 + l.peso)); });
+    var imp = g.append("g");
+    var nodo = g.append("g").selectAll("g").data(nodes).join("g").attr("class", "rt-nodo")
+      .on("click", function (ev, n) { ev.stopPropagation(); scegli(n); })
+      .call(d3.drag().on("start", function (ev, n) { if (!ev.active) reteSim.alphaTarget(0.15).restart(); n.fx = n.x; n.fy = n.y; }).on("drag", function (ev, n) { n.fx = ev.x; n.fy = ev.y; }).on("end", function (ev, n) { if (!ev.active) reteSim.alphaTarget(0.005); n.fx = null; n.fy = null; }));
+    nodo.append("circle").attr("r", function (n) { return R(n) + 5; }).attr("fill", function (n) { return COL[n.tipo] || "#B9A3EE"; }).attr("opacity", .35).attr("filter", "url(#rglow)");
+    nodo.append("circle").attr("r", R).attr("fill", function (n) { return COL[n.tipo] || "#B9A3EE"; }).attr("stroke", "#fff").attr("stroke-width", 2);
+    nodo.append("text").attr("class", "rt-et").attr("dy", function (n) { return R(n) + 12; }).text(function (n) { return n.id; });
+    nodes.forEach(function (n, i) { var a = i * 2.4; n.x = W / 2 + Math.cos(a) * 10 * Math.sqrt(i); n.y = H / 2 + Math.sin(a) * 10 * Math.sqrt(i); });
+    reteSim = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).distance(function (l) { return 40 + R(l.source) + R(l.target); }).strength(0.5))
+      .force("charge", d3.forceManyBody().strength(-110).distanceMax(260))
+      .force("x", d3.forceX(W / 2).strength(0.05)).force("y", d3.forceY(H / 2).strength(0.07))
+      .force("collide", d3.forceCollide(function (n) { return R(n) + 8; }))
+      .on("tick", function () {
+        filo.attr("d", function (l) { var a = l.source, b = l.target, dx = b.x - a.x, dy = b.y - a.y; return "M" + a.x + "," + a.y + "Q" + ((a.x + b.x) / 2 - dy * 0.15) + "," + ((a.y + b.y) / 2 + dx * 0.15) + " " + b.x + "," + b.y; });
+        nodo.attr("transform", function (n) { return "translate(" + n.x + "," + n.y + ")"; });
+      });
+    reteSim.alphaTarget(0.005); // respira piano
+    var timer = null;
+    function scegli(n) {
+      var vic = new Set([n.id]), acc = [];
+      links.forEach(function (l) { if (l.source === n || l.target === n) { vic.add(l.source.id); vic.add(l.target.id); acc.push(l); } });
+      nodo.classed("spento", function (x) { return !vic.has(x.id); }); filo.classed("spento", function (l) { return acc.indexOf(l) < 0; });
+      if (timer) clearInterval(timer); imp.selectAll("*").remove();
+      var paths = filo.filter(function (l) { return acc.indexOf(l) >= 0; }).nodes();
+      function spara() { paths.forEach(function (pth, i) { var c = imp.append("circle").attr("r", 3).attr("fill", "#9C7FE6"), L = pth.getTotalLength(), t0 = performance.now() + i * 80; (function mv(t) { var u = (t - t0) / 900; if (u > 1) { c.remove(); return; } if (u >= 0) { var q = pth.getPointAtLength((pth.__data__.source === n ? u : 1 - u) * L); c.attr("cx", q.x).attr("cy", q.y); } requestAnimationFrame(mv); })(performance.now()); }); }
+      spara(); timer = setInterval(spara, 1600);
+      $("rete-info").innerHTML = "<div class='panel2'><b>" + esc(n.id) + "</b> <span class='muted'>· ci ha pensato " + n.n + (n.n === 1 ? " volta" : " volte") + "</span><div id='rete-p' class='muted' style='margin-top:6px;font-size:13.5px'>…</div></div>";
+      api("/api/mente?tema=" + encodeURIComponent(n.id)).then(function (r) { var el = $("rete-p"); if (el) el.innerHTML = r.pensieri.length ? r.pensieri.map(function (p) { return "<div style='margin:4px 0'>«" + esc(p.testo) + "»</div>"; }).join("") : "Nessun pensiero scritto che la nomina."; }).catch(function () {});
+    }
+    svg.on("click", function () { nodo.classed("spento", false); filo.classed("spento", false); if (timer) clearInterval(timer); imp.selectAll("*").remove(); $("rete-info").innerHTML = ""; });
+  }
+  // la cronaca con le etichette
+  var LABEL = { azione: ["Azione", "mint"], pensiero: ["Pensiero", "lilac"], riflessione: ["Riflessione", "lilac"], esito: ["Risultato", "yellow"], nota: ["Si accorge", "sky"], mondo: ["Mondo", "sky"], evento: ["Evento", "sky"], racconto: ["Creazione", "coral"], disegno: ["Disegno", "pink"], aperto: ["Gli resta in testa", "lilac"], dimenticato: ["Dimenticato", "grey"], nome: ["Parola sua", "pink"], sogno: ["Sogno", "lilac"], diario: ["Diario", "coral"], intervista: ["Intervista", "coral"], convinzione: ["Convinzione", "yellow"], scheda: ["Su di sé", "yellow"], parla: ["Tu", "grey"], laboratorio: ["Tu", "grey"], errore: ["Errore", "grey"] };
+  var FILTRI = [["tutto", "Tutto", ""], ["azioni", "Azioni", "azione,esito"], ["pensieri", "Pensieri", "pensiero,riflessione,aperto,dimenticato,convinzione,scheda,nome"], ["mondo", "Mondo", "mondo,evento,nota"], ["creazioni", "Creazioni", "racconto,disegno"], ["notte", "Notte", "sogno,diario,intervista"], ["tu", "Tu", "parla,laboratorio"]], filtro = "tutto";
+  $("filters").innerHTML = FILTRI.map(function (f) { return "<button data-f='" + f[0] + "' aria-pressed='" + (f[0] === filtro) + "'>" + f[1] + "</button>"; }).join("");
+  $("filters").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; filtro = b.dataset.f; this.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b); }); renderFeed(true); });
+  function feedRows(L) {
+    var out = "", last = "", oggi = new Date().toDateString(), ieri = new Date(Date.now() - 86400000).toDateString();
+    L.forEach(function (l) {
+      var d = new Date(l.t), ds = d.toDateString(), lab = LABEL[l.tipo] || [l.tipo, "grey"], tx = String(l.testo || ""), i = tx.indexOf(" — ");
+      if (ds !== last) { last = ds; out += "<div class='day'>" + (ds === oggi ? "Oggi" : ds === ieri ? "Ieri" : d.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })) + "</div>"; }
+      var main = i > 0 ? tx.slice(0, i) : tx, why = i > 0 ? tx.slice(i + 3) : "";
+      if (l.tipo === "pensiero" || l.tipo === "riflessione") main = "«" + main + "»";
+      out += "<div class='row'><time>" + hhmm(l.t) + "</time><div><span class='lab c-" + lab[1] + "'>" + lab[0] + "</span><p>" + esc(main).replace(/\n/g, "<br>") + (why ? "<em>perché " + esc(why) + "</em>" : "") + "</p></div></div>";
+    });
+    return out || "<p class='muted'>Niente, per ora.</p>";
+  }
+  function renderFeed(force) {
+    var f = FILTRI.filter(function (x) { return x[0] === filtro; })[0];
+    if (DEMO || (!force && filtro === "tutto")) { $("feed2").innerHTML = feedRows((STATE.log || []).slice(0, 60)); if (DEMO || !force) return; }
+    api("/api/cronaca" + (f[2] ? "?tipi=" + f[2] : "")).then(function (L) { $("feed2").innerHTML = feedRows(L); }).catch(function () {});
+  }
+  function renderCose() {
+    var k = STATE.koki, counts = {}, tel = STATE.mondo.telescopio, sch = k.scheda || { gusti: [], abitudini: [] }, days = Math.max(1, Math.floor((Date.now() - k.nato) / 86400000) + 1);
     (k.inventario || []).forEach(function (c) { counts[c] = (counts[c] || 0) + 1; });
     var inv = Object.keys(counts).map(function (c) { return "<span class='chip'>" + esc(c) + (counts[c] > 1 ? " ×" + counts[c] : "") + "</span>"; }).join("");
-    var days = Math.max(1, Math.floor((Date.now() - k.nato) / 86400000) + 1), tel = STATE.mondo.telescopio, sch = k.scheda || { gusti: [], abitudini: [] };
-    $("m-body").innerHTML =
-      "<div><h3>Come sta</h3><div class='bars'>" + bar("Energia", b.energia) + bar("Umore", (k.umore + 1) / 2) + bar("Voglia di scoprire", b.curiosita) + bar("Voglia di creare", b.espressione) + bar("Bisogno di compagnia", b.socialita) + bar("Paura", b.paura) + bar("Coraggio al buio", k.coraggio || 0) + "</div></div>" +
-      (Object.keys(k.luoghi || {}).length ? "<div><h3>Come si sente nei posti</h3><ul class='list'>" + Object.keys(k.luoghi).map(function (l) { return "<li><b>" + esc(PLACE_NAME[l] || l) + "</b>: " + esc(k.luoghi[l]) + "</li>"; }).join("") + "</ul></div>" : "") +
-      (Object.keys(k.nomi || {}).length ? "<div><h3>Le sue parole</h3><ul class='list'>" + Object.keys(k.nomi).map(function (c) { return "<li>" + esc(c) + " → <b>«" + esc(k.nomi[c]) + "»</b></li>"; }).join("") + "</ul></div>" : "") +
-      "<div><h3>Cose che ha scoperto di sé</h3>" + ((sch.gusti.length + sch.abitudini.length) ? "<ul class='list'>" + sch.gusti.map(function (g) { return "<li>" + esc(g) + "</li>"; }).join("") + sch.abitudini.map(function (g) { return "<li>" + esc(g) + " <span class='muted'>(abitudine)</span></li>"; }).join("") + "</ul>" : "<p class='muted'>Ancora niente: è nato da " + days + (days === 1 ? " giorno" : " giorni") + ". Lo scoprirà vivendo.</p>") + "</div>" +
-      "<div><h3>Pensieri che si porta dietro</h3>" + (STATE.aperti.length ? "<ul class='list'>" + STATE.aperti.map(function (a) { var f = a.forza == null ? .5 : a.forza; return "<li style='opacity:" + (0.45 + Math.min(1, f) * 0.55).toFixed(2) + "'><span class='muted'>" + esc(a.tipo) + ":</span> " + esc(a.testo) + " <span class='muted'>" + (f > .8 ? "(fisso in testa)" : f < .25 ? "(sta sbiadendo)" : "") + "</span></li>"; }).join("") + "</ul>" : "<p class='muted'>Nessuno, per ora.</p>") + "</div>" +
-      "<div><h3>Di cosa è convinto</h3>" + (STATE.convinzioni.length ? "<ul class='list'>" + STATE.convinzioni.map(function (c) { return "<li>" + esc(c.testo) + "</li>"; }).join("") + "</ul>" : "<p class='muted'>Non si è ancora fatto un'idea delle cose.</p>") + "</div>" +
-      "<div><h3>La sua collezione</h3>" + (inv ? "<div class='chips'>" + inv + "</div>" : "<p class='muted'>Vuota. Prima o poi troverà qualcosa.</p>") + "</div>" +
-      "<div><h3>Disegni</h3>" + (STATE.opere.length ? "<ul class='list'>" + STATE.opere.slice(0, 12).map(function (o) { return "<li>" + esc(o.titolo) + " <span class='muted'>" + new Date(o.t).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) + "</span></li>"; }).join("") + "</ul>" : "<p class='muted'>Nessuno, per ora.</p>") + "</div>" +
-      "<div><h3>Cosa è cambiato sull'isola</h3>" + ((STATE.oggetti || []).length ? "<ul class='list'>" + STATE.oggetti.slice().reverse().slice(0, 20).map(function (o) { return "<li><b>" + esc(o.nome) + "</b> <span class='muted'>· " + esc(PLACE_NAME[o.luogo] || o.luogo) + "</span><br><span class='muted'>" + esc(o.descrizione) + (o.rotto ? " (rotto)" : "") + "</span></li>"; }).join("") + "</ul>" : "<p class='muted'>Niente, per ora. Tutto è come all'inizio.</p>") + "</div>" +
-      "<div><h3>Il telescopio</h3><p class='muted' style='margin:0'>" + (tel.aggiustato ? "Aggiustato!" : "Montati: " + (tel.montati.join(", ") || "nessun pezzo") + ". Mancano: " + tel.mancanti.join(", ") + ".") + "</p></div>" +
-      "<div><h3>Cronaca</h3><div class='feed'>" + STATE.log.slice(0, 25).map(function (l) { return "<div><time>" + hhmm(l.t) + "</time><span>" + esc(l.testo) + "</span></div>"; }).join("") + "</div></div>" +
-      (DEMO ? "" : "<p class='muted' style='margin:0'>Cervello: " + STATE.cervello.chiamateOggi + " pensieri su " + STATE.cervello.massimo + " disponibili oggi.</p>");
+    function ul(arr, f, vuoto) { return arr.length ? "<ul class='list'>" + arr.map(f).join("") + "</ul>" : "<p class='muted' style='margin:0'>" + vuoto + "</p>"; }
+    $("sez-cose-in").innerHTML =
+      "<div><h3>COSA HA SCOPERTO DI SÉ</h3>" + ul(sch.gusti.map(function (g) { return [g, ""]; }).concat(sch.abitudini.map(function (g) { return [g, " <span class='muted'>(abitudine)</span>"]; })), function (x) { return "<li>" + esc(x[0]) + x[1] + "</li>"; }, "Ancora niente: è nato da " + days + (days === 1 ? " giorno" : " giorni") + ". Lo scoprirà vivendo.") + "</div>" +
+      "<div><h3>PENSIERI CHE SI PORTA DIETRO</h3>" + ul(STATE.aperti, function (a) { var f = a.forza == null ? .5 : a.forza; return "<li style='opacity:" + (0.45 + Math.min(1, f) * 0.55).toFixed(2) + "'><span class='lab c-lilac'>" + esc(a.tipo) + "</span> " + esc(a.testo) + " <span class='muted'>" + (f > .8 ? "(fisso in testa)" : f < .25 ? "(sta sbiadendo)" : "") + "</span></li>"; }, "Nessuno, per ora.") + "</div>" +
+      "<div><h3>DI COSA È CONVINTO</h3>" + ul(STATE.convinzioni, function (c) { return "<li>" + esc(c.testo) + "</li>"; }, "Non si è ancora fatto un'idea delle cose.") + "</div>" +
+      (Object.keys(k.nomi || {}).length ? "<div><h3>LE SUE PAROLE</h3>" + ul(Object.keys(k.nomi), function (c) { return "<li>" + esc(c) + " → <b>«" + esc(k.nomi[c]) + "»</b></li>"; }, "") + "</div>" : "") +
+      (Object.keys(k.luoghi || {}).length ? "<div><h3>COME SI SENTE NEI POSTI</h3>" + ul(Object.keys(k.luoghi), function (l) { return "<li><b>" + esc(PLACE_NAME[l] || l) + "</b>: " + esc(k.luoghi[l]) + "</li>"; }, "") + "</div>" : "") +
+      "<div><h3>LA SUA COLLEZIONE</h3>" + (inv ? "<div class='chips'>" + inv + "</div>" : "<p class='muted' style='margin:0'>Vuota. Prima o poi troverà qualcosa.</p>") + "</div>" +
+      "<div><h3>COSA È CAMBIATO SULL'ISOLA</h3>" + ul((STATE.oggetti || []).slice().reverse().slice(0, 20), function (o) { return "<li><b>" + esc(o.nome) + "</b> <span class='muted'>· " + esc(PLACE_NAME[o.luogo] || o.luogo) + "</span><br><span class='muted'>" + esc(o.descrizione) + (o.rotto ? " (rotto)" : "") + "</span></li>"; }, "Niente, per ora. Tutto è come all'inizio.") + "</div>" +
+      "<div><h3>IL TELESCOPIO</h3><p class='muted' style='margin:0'>" + (tel.aggiustato ? "Aggiustato!" : "Montati: " + (tel.montati.join(", ") || "nessun pezzo") + ". Mancano: " + tel.mancanti.join(", ") + ".") + "</p></div>";
   }
+  function openDiario() { setDiaryTab("koki"); if (DEMO) { diary = [{ giorno: new Date().toISOString().slice(0, 10), testo: "(Anteprima: il diario vero lo scrive Kōki quando il cervello è acceso.)" }]; dIdx = 0; renderDiary(); } else api("/api/diario").then(function (d) { diary = d; dIdx = 0; renderDiary(); }).catch(function () {}); }
+  var RENDER = { oggi: renderOggi, stats: renderStats, mente: renderRete, pensieri: function () { renderFeed(filtro !== "tutto"); }, diario: openDiario, disegni: renderGallery, cose: renderCose, lab: renderLab };
+  var LIVE = { oggi: 1, stats: 1, pensieri: 1, cose: 1 }; // si aggiornano da sole quando arriva lo stato nuovo
+  function sommari() {
+    if (!STATE) return; var k = STATE.koki, e = emoOf(k), st = k.stats || {};
+    var su = { oggi: k.dorme ? "Dorme" : "Felicità " + pct(e.gioia) + "% · meraviglia " + pct(e.meraviglia) + "%", stats: "Giorno " + Math.max(1, Math.floor((Date.now() - k.nato) / 86400000) + 1) + " · " + Object.keys(st.visti || {}).length + " posti visti", mente: "Le cose a cui pensa, collegate", pensieri: k.pensiero ? "«" + k.pensiero + "»" : "", diario: "Il suo diario, l'osservatore, le interviste", disegni: (STATE.opere || []).length ? STATE.opere.length + (STATE.opere.length === 1 ? " disegno" : " disegni") : "Ancora nessuno", cose: (k.inventario || []).length + " cose nella collezione", parla: "Per lui sei il Custode", bottiglia: STATE.mondo.bottigliaInViaggio ? "Una bottiglia è in viaggio" : "Un biglietto affidato al mare", lab: "Stimoli, esporta, rinascita" };
+    Object.keys(su).forEach(function (x) { var el = $("su-" + x); if (el) el.textContent = su[x]; });
+    $("sh-eta").textContent = "L'esperimento · giorno " + Math.max(1, Math.floor((Date.now() - k.nato) / 86400000) + 1);
+  }
+  function renderOpen() { if (!STATE) return; sommari(); if (!SHEET.classList.contains("open")) return; Object.keys(LIVE).forEach(function (x) { if (isOpen(x)) RENDER[x](); }); }
+  document.querySelectorAll("details.acc").forEach(function (d) { d.addEventListener("toggle", function () { if (d.open && STATE && RENDER[d.dataset.sez]) RENDER[d.dataset.sez](); }); });
+  function apriSchede(on) {
+    SHEET.classList.toggle("open", on); $("pallino").setAttribute("aria-expanded", on ? "true" : "false");
+    if (on) { closeCard(); $("s-pass").classList.remove("open"); if (STATE) { sommari(); document.querySelectorAll("details.acc[open]").forEach(function (d) { if (RENDER[d.dataset.sez]) RENDER[d.dataset.sez](); }); } }
+  }
+  $("pallino").addEventListener("click", function () { apriSchede(!SHEET.classList.contains("open")); });
   // ---------- i disegni ----------
   var IMG = {}, imgWait = {};
   function drawingData(id) {
@@ -1578,7 +1874,7 @@
   function setDiaryTab(t) {
     dTab = t; document.querySelectorAll("[data-dt]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.dt === t ? "true" : "false"); });
     $("d-page").hidden = t !== "koki"; $("o-page").hidden = t !== "oss"; $("o-traits").hidden = t !== "oss"; $("i-page").hidden = t !== "int";
-    $("d-title").textContent = t === "koki" ? "Il diario di Kōki" : t === "oss" ? "Il quaderno dell'osservatore" : "Le interviste della domenica";
+    if ($("d-title")) $("d-title").textContent = t === "koki" ? "Il diario di Kōki" : t === "oss" ? "Il quaderno dell'osservatore" : "Le interviste della domenica";
     if (t === "koki") renderDiary();
     else if (t === "int") { if (DEMO) { intv = []; renderInterviews(); } else api("/api/interviste").then(function (d) { intv = d; iIdx = 0; renderInterviews(); }).catch(function () {}); }
     else if (DEMO) { quad = { pagine: [], trattiNuovi: [] }; renderObserver(); }
@@ -1616,17 +1912,10 @@
   $("l-copy").addEventListener("click", function () {
     exportText().then(function (t) { return navigator.clipboard.writeText(t); }).then(function () { $("l-state").textContent = "Copiato: ora puoi incollarlo in una chat con Claude."; }).catch(function () { $("l-state").textContent = "Non sono riuscito a copiare: usa «Scarica il file»."; });
   });
-  function openSheet(id) {
-    document.querySelectorAll(".sheet").forEach(function (s) { s.classList.remove("open"); });
-    $("s-" + id).classList.add("open"); closeCard();
-    if (id === "mente" && STATE) renderMind();
-    if (id === "disegni") renderGallery();
-    if (id === "lab") renderLab();
-    if (id === "diario") { setDiaryTab("koki"); if (DEMO) { diary = [{ giorno: new Date().toISOString().slice(0, 10), testo: "(Anteprima: il diario vero lo scrive Kōki quando il cervello è acceso.)" }]; dIdx = 0; renderDiary(); } else api("/api/diario").then(function (d) { diary = d; dIdx = 0; renderDiary(); }).catch(function () {}); }
-    if (id === "pass") setTimeout(function () { $("p-in").focus(); }, 50);
+  function openSheet(id) { // solo la password è ancora una scheda a parte
+    if (id === "pass") { apriSchede(false); $("s-pass").classList.add("open"); setTimeout(function () { $("p-in").focus(); }, 50); }
   }
-  document.querySelectorAll("[data-open]").forEach(function (b) { b.addEventListener("click", function () { var s = $("s-" + b.dataset.open); if (s.classList.contains("open")) s.classList.remove("open"); else openSheet(b.dataset.open); }); });
-  document.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", function () { b.closest(".sheet").classList.remove("open"); }); });
+  document.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", function () { var sh = b.closest(".sheet"); if (sh === SHEET) apriSchede(false); else sh.classList.remove("open"); }); });
   $("p-form").addEventListener("submit", function (e) { e.preventDefault(); KEY = $("p-in").value; try { localStorage.setItem("koki-key", KEY); } catch (er) {} $("s-pass").classList.remove("open"); refresh(); });
   $("b-send").addEventListener("click", function () {
     var tx = $("b-text").value.trim(); if (!tx) return;
@@ -1651,9 +1940,9 @@
   function startDemo() {
     DEMO = true; banner.style.display = "block"; banner.textContent = "Anteprima: il cervello non è collegato, Kōki gira a caso.";
     if (demoTimer) return;
-    var ids = Object.keys(SPOT), thoughts = ["Chissà cosa c'è laggiù.", "Il gatto di pietra mi guarda.", "Voglio trovare qualcosa di bello.", "Perché quell'orologio va al contrario?", "La casetta è sempre chiusa…"], acts = ["osserva", "cerca", "disegna", "gioca", "riposa"];
-    STATE = { adesso: Date.now(), koki: { luogo: "casa", dorme: false, attivita: null, descrizione: "si guarda intorno", pensiero: "Che posto è questo?", umore: .3, corpo: { energia: .8, curiosita: .6, espressione: .3, socialita: .3, paura: 0 }, inventario: [], scheda: { gusti: [], abitudini: [] }, nato: Date.now() },
-      mondo: { gatto: "piazza", impronte: true, bottiglia: true, lanterna: true, telescopio: { mancanti: ["vite", "manovella"], montati: ["lente"], aggiustato: false } }, aperti: [], convinzioni: [], opere: [], log: [], cervello: { chiamateOggi: 0, massimo: 0 } };
+    var ids = Object.keys(SPOT), thoughts = ["Chissà cosa c'è laggiù.", "Il gatto di pietra mi guarda.", "Voglio trovare qualcosa di bello.", "Perché quell'orologio va al contrario?", "La casa stregata mi fa un po' paura…"], acts = ["osserva", "cerca", "disegna", "gioca", "riposa"];
+    STATE = { adesso: Date.now(), koki: { luogo: "casa", dorme: false, attivita: null, descrizione: "si guarda intorno", pensiero: "Che posto è questo?", umore: .3, corpo: { energia: .8, curiosita: .6, espressione: .3, socialita: .3, paura: 0 }, inventario: [], scheda: { gusti: [], abitudini: [] }, nato: Date.now(), emo: { gioia: .6, meraviglia: .7, tristezza: .1 }, stats: { passi: 4, visti: { casa: 1, piazza: 2 } }, coraggio: .1 },
+      mondo: { gatto: "piazza", orme: { a: "casa", giorno: "x" }, fantasmi: { fuori: true, luogo: "casetta" }, telefono: true, spaventa: "casa", bottiglia: true, telescopio: { mancanti: ["vite", "manovella"], montati: ["lente"], aggiustato: false } }, aperti: [], convinzioni: [], opere: [], log: [], cervello: { chiamateOggi: 0, massimo: 0 } };
     applyWorldState(); renderHud();
     function next() {
       var k = STATE.koki, now = Date.now();
@@ -1836,7 +2125,7 @@
   $("homeBtn").addEventListener("click", function () { closeCard(); closePop(); vel.x = vel.y = 0; yawGoal = 0.42; focus = { x: HOME.x, z: HOME.z, zoom: HOME.zoom }; });
 
   var card = $("card");
-  var PLACE_DESC = { casa: "La casetta tonda di Kōki, con il tetto di muschio.", collina: "Il punto più alto dell'isola, con un vecchio telescopio.", bosco: "Un bosco fitto con un albero molto vecchio.", orologio: "Una torre con un orologio un po' strano.", casetta: "Una casetta con la porta chiusa a chiave.", orto: "Un orto con lo spaventapasseri e la serra.", lanterna: "Una vecchia lanterna di pietra tra i sassi.", giardino_giapponese: "Un giardino con il torii, il bonsai e il ponticello rosso." };
+  var PLACE_DESC = { casa: "La casetta tonda di Kōki, con il tetto di muschio.", collina: "Il punto più alto dell'isola, con un vecchio telescopio.", bosco: "Un bosco fitto con un albero molto vecchio.", orologio: "Una torre con un orologio un po' strano.", casetta: "Una casa grande e storta, con le finestre rotte e la porta sbarrata.", orto: "Un orto con lo spaventapasseri e la serra.", pozzo: "Un vecchio pozzo di pietra. Dal fondo si sente respirare.", giardino_giapponese: "Un giardino con il torii, il bonsai e il ponticello rosso." };
   function closeCard() { S.selected = null; card.hidden = true; }
   function openCard(a) {
     if (a && a.koki) { setView("fianco"); return; }
@@ -1859,6 +2148,9 @@
     card.appendChild(el("p", "msg", here ? (STATE.koki.dorme ? "Kōki è qui e dorme." : "Kōki è qui: " + (STATE.koki.descrizione || "") + ".") : "Kōki adesso non è qui."));
     vel.x = vel.y = 0; focus = { x: a.x, z: a.z, y: a.h + 1, zoom: Math.max(cam.zoom, 2.2) };
   }
+
+  // per guardare da vicino un posto: indirizzo con #guarda=casetta (o pozzo, bosco, giardino...)
+  (function () { var gm = location.hash.match(/guarda=(\w+)/); if (!gm) return; setTimeout(function () { var sp = SPOT[gm[1]], z = ZONE[gm[1]]; if (!sp) return; focus = { x: z ? z.x : sp.x, z: z ? z.z : sp.z, y: (z ? z.h : 1) + 1, zoom: 4.2 }; }, 1200); })();
 
   // ===================== CICLO =====================
   var last = performance.now(), statusT = 0, clockT = 99, wasFar = null;

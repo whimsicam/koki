@@ -30,7 +30,7 @@ Vive su **Cloudflare**, gratis e senza carta di credito. Pensa con **Workers AI*
 ### Azioni libere e il Mondo narratore
 Oltre alle azioni di base, Kōki può fare **qualsiasi cosa** descritta con le sue parole (azione `libera`). Una seconda mente, il **Mondo**, fa da narratore imparziale: decide cosa succede davvero (riesce, fallisce, imprevisti) e può cambiare l'isola. Crea cose nuove, ne rompe o ne toglie altre, consuma o aggiunge cose alla collezione. Le cose create restano (al massimo 40) e compaiono nell'isola 3D con una forma scelta da un kit low poly. Toccandole se ne legge la descrizione. Il Mondo usa il modello grande (`BIG_MODEL`, massimo `MAX_BIG_CALLS` al giorno), che a volte usa anche Kōki per decidere. I misteri dell'isola non vengono mai risolti dal Mondo.
 
-Nel menu di Kōki non ci sono "disegna" o "gioca": se disegna è un'idea sua, fatta con l'azione libera. In quel caso il Mondo descrive il disegno e un modello di immagini (`IMAGE_MODEL`, massimo `MAX_IMAGES` al giorno) lo trasforma in un disegno a pastelli vero. I disegni sono nella galleria della pagina, e gli ultimi tre sono appesi su un filo accanto alla casa.
+Nel menu di Kōki non c'è "disegna": se disegna è un'idea sua, fatta con l'azione libera, e solo se ha con cosa farlo (una matita, la terra, dei petali...). Il disegno lo fa lui, tratto per tratto: il modello sceglie linee, cerchi e scarabocchi su un foglio 100×100, con i colori che ha davvero, e la pagina li mostra come un disegno a matita o a pastello. I disegni sono nella sezione Disegni, e gli ultimi tre sono appesi su un filo accanto alla casa.
 
 ### L'esperimento: osservatore e laboratorio
 - **Quaderno dell'osservatore** (nel Diario, seconda scheda): ogni notte, dopo il diario di Kōki, un osservatore esterno (modello grande) scrive note di campo neutre: cosa ha fatto, dove, come ha reagito, cosa è cambiato rispetto ai giorni prima. Per ognuno dei cinque tratti scrive come si è manifestato quel giorno, e segna i **tratti nuovi** che sembrano nascere (con quanti giorni sono stati notati). Kōki non legge mai queste note: l'osservatore non lo influenza.
@@ -40,7 +40,20 @@ Nel menu di Kōki non ci sono "disegna" o "gioca": se disegna è un'idea sua, fa
 - **Esporta**: dal laboratorio scarichi un file di testo con tutto l'esperimento (diari, quaderno, tratti, interventi, convinzioni, opere). Caricalo nel progetto su Claude per farlo leggere e analizzare.
 
 ### L'isola
-Metà cose normali e metà strane. Normali: la casa di Kōki, la piazzetta con la fontana, il laghetto col ponticello, il prato fiorito, l'orto, il bosco, il giardino giapponese, la spiaggia, il molo con la barca, il faro, il mulino, la balena. Strane: il telescopio rotto sulla collina (mancano lente, vite e manovella), la torre con l'orologio che va all'indietro, la casetta chiusa con la finestra accesa di notte, la lanterna di pietra che certe notti si accende da sola, il gatto di pietra che si sposta quando nessuno guarda, le impronte sulla spiaggia, la bottiglia col messaggio.
+Metà cose normali e metà strane. Normali: la casa di Kōki, la piazzetta con la fontana, il laghetto col ponticello, il prato fiorito, l'orto, il bosco, il giardino giapponese, la spiaggia, il molo con la barca, il faro, il mulino, la balena.
+Strane (nessun mistero si risolve mai):
+- la **casa stregata**: certe notti escono i fantasmi. La loro vera natura (gentili, dispettosi, tristi o un po' cattivi) è scelta a caso alla nascita e non compare da nessuna parte: si capisce solo da come si comportano (regali davanti alla porta, cose sparite e nascoste, pianti, colpi alla porta);
+- le **orme** che certe mattine partono dal mare e arrivano in un posto a caso, a volte fino alla sua porta. Lui può accorgersene oppure no;
+- la **porta in mezzo al prato**, che si apre sullo stesso prato;
+- il **laghetto** che di notte riflette stelle che in cielo non ci sono;
+- il **pozzo che respira**, la cui eco ripete le cose che Kōki ha pensato il giorno prima;
+- la **casetta in miniatura** nel bosco, con le sue stesse cose sulla mensola;
+- il **telefono senza fili** sulla collina, che certe notti squilla;
+- lo **spaventapasseri** che ogni mattina guarda da un'altra parte, sempre più spesso verso casa sua;
+- il gatto di pietra che si sposta, l'orologio che va all'indietro, il telescopio rotto, la bottiglia col messaggio.
+
+### La pagina
+Il pallino in basso apre le schede, ognuna a fisarmonica: Come sta (anelli di energia, felicità, meraviglia, tristezza, paura, coraggio...), Statistiche (abilità che salgono di livello, come in un gioco di ruolo), La sua mente (la rete delle cose a cui pensa e di quali pensa insieme), Pensieri e azioni (con etichette e filtri), Diario e quaderno, Disegni, Le sue cose, Parla, Bottiglia, Laboratorio. Le emozioni le dichiara lui stesso a ogni decisione e calano piano verso la calma.
 
 ### Il nucleo che non cambia mai
 Curioso · testardo · creativo · ha paura del buio ma è innamorato delle stelle · colleziona piccole cose.

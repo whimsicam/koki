@@ -45,7 +45,11 @@ function placeView(S, W) {
   const seen = [];
   if (W.gatto === S.luogo) seen.push("il gatto di pietra (una statuetta di un gatto seduto)");
   if (S.luogo === "collina") seen.push(W.telescopio.aggiustato ? "il telescopio, ora funzionante" : "il vecchio telescopio" + (S.sa.telescopio ? ", a cui mancano: " + W.telescopio.mancanti.join(", ") : ""));
-  if (S.luogo === "spiaggia" && W.impronte) seen.push("delle impronte strane sulla sabbia, che non sono tue e vanno verso il mare");
+  if (W.orme && (S.luogo === "spiaggia" || S.luogo === W.orme.a) && S.ormeViste === W.orme.giorno) seen.push(`delle orme che non sono tue: vengono dal mare e arrivano fino ${al(PLACES[W.orme.a].nome)}`);
+  if (W.fantasmi && W.fantasmi.fuori && W.fantasmi.luogo === S.luogo) seen.push("delle figure bianche e trasparenti che fluttuano piano, un po' lontano da te");
+  if (S.luogo === "collina" && W.telefono) seen.push("il telefono sul palo: sta squillando");
+  if (S.luogo === "orto" && W.spaventa) seen.push(`lo spaventapasseri: oggi è girato verso ${PLACES[W.spaventa] ? PLACES[W.spaventa].nome : W.spaventa}`);
+  if (S.luogo === "bosco") seen.push("la casetta in miniatura tra le radici: sulla sua mensolina ci sono " + (S.inventario.length ? S.inventario.slice(-3).join(", ") + " (proprio le stesse cose che hai tu)" : "niente, come sulla tua"));
   if (S.luogo === "spiaggia" && W.bottiglia) seen.push("una bottiglia di vetro chiusa, appena arrivata dalle onde");
   return `${p.nome}: ${p.desc}` + (seen.length ? " Qui vedi anche: " + seen.join("; ") + "." : "") + (feelPlace(S, S.luogo) ? ` (${feelPlace(S, S.luogo)})` : "");
 }
@@ -82,7 +86,8 @@ export function decisionPrompt(S, W, ctx) {
     "Decidi cosa fare adesso: da 1 a 3 mosse in fila. Per ogni mossa scrivi l'azione, l'oggetto (il luogo, la cosa o il soggetto, se serve), quanti minuti (da 5 a 30) e perché, con la tua voce.",
     "Scrivi anche il pensiero che hai in questo momento (una o due frasi).",
     "Se ti nasce un nuovo desiderio, una domanda o una promessa a te stesso, aggiungilo in nuovi_pensieri. Se uno dei pensieri che ti porti dietro ti gira ancora in testa adesso, metti il suo numero in ripensati; se è risolto, in risolti. Quelli a cui non ripensi, piano piano li dimentichi.",
-    "Se vuoi, puoi dare un nome tuo a una cosa o a un luogo (in nomi)."
+    "Se vuoi, puoi dare un nome tuo a una cosa o a un luogo (in nomi).",
+    "In emozioni scrivi come ti senti davvero adesso, da 0 a 1: gioia, meraviglia, tristezza. In temi scrivi da 1 a 3 parole (cose, posti, idee) a cui stai pensando adesso."
   ].filter(Boolean).join("\n\n");
   return { system: identity(S), user, schema: DECISION_SCHEMA };
 }
@@ -107,7 +112,9 @@ const DECISION_SCHEMA = {
     nuovi_pensieri: { type: "array", items: { type: "object", properties: { tipo: { type: "string", enum: ["desiderio", "domanda", "promessa", "preoccupazione"] }, testo: { type: "string" } }, required: ["tipo", "testo"] } },
     risolti: { type: "array", items: { type: "integer" } },
     ripensati: { type: "array", items: { type: "integer" } },
-    nomi: { type: "array", items: { type: "object", properties: { cosa: { type: "string" }, nome: { type: "string" } }, required: ["cosa", "nome"] } }
+    nomi: { type: "array", items: { type: "object", properties: { cosa: { type: "string" }, nome: { type: "string" } }, required: ["cosa", "nome"] } },
+    emozioni: { type: "object", properties: { gioia: { type: "number" }, meraviglia: { type: "number" }, tristezza: { type: "number" } } },
+    temi: { type: "array", items: { type: "string" } }
   },
   required: ["pensiero", "mosse"]
 };
@@ -312,10 +319,11 @@ function mockAnswer(p) {
   if (props.mosse) {
     if (Math.random() < .3) return { pensiero: "Mi è venuta un'idea strana.", mosse: [{ azione: "libera", oggetto: pick(["provo a costruire una torretta con i sassi che trovo qui intorno", "disegno il gatto di pietra con un carboncino su un sasso piatto"]), minuti: 20, perche: "voglio vedere cosa viene fuori" }] };
     const where = pick(Object.keys(PLACES));
-    return { pensiero: "Chissà cosa c'è oggi " + al(PLACES[where].nome) + ".", mosse: [{ azione: "vai", oggetto: where, minuti: 10, perche: "voglio vedere com'è oggi" }, { azione: pick(["cerca", "osserva"]), oggetto: "quello che trovo", minuti: 20, perche: "mi incuriosisce" }], ripensati: [1, 2], nomi: Math.random() < .2 ? [{ cosa: "il gatto di pietra", nome: "Pietrino" }] : [], nuovi_pensieri: Math.random() < .2 ? [{ tipo: "domanda", testo: "Chi sposta il gatto di pietra?" }] : [] };
+    return { pensiero: "Chissà cosa c'è oggi " + al(PLACES[where].nome) + ".", mosse: [{ azione: "vai", oggetto: where, minuti: 10, perche: "voglio vedere com'è oggi" }, { azione: pick(["cerca", "osserva"]), oggetto: "quello che trovo", minuti: 20, perche: "mi incuriosisce" }], ripensati: [1, 2], emozioni: { gioia: Math.random(), meraviglia: Math.random(), tristezza: Math.random() * .4 }, temi: [pick(["sassi", "gatto di pietra", "stelle", "mare", "bottoni"]), pick(["casa", "luce", "orme", "mare"])], nomi: Math.random() < .2 ? [{ cosa: "il gatto di pietra", nome: "Pietrino" }] : [], nuovi_pensieri: Math.random() < .2 ? [{ tipo: "domanda", testo: "Chi sposta il gatto di pietra?" }] : [] };
   }
-  if (props.racconto && /prova a fare questo: "[^"]*disegn/.test(p.user)) return { riuscito: true, racconto: "Kōki ha disegnato il gatto di pietra su un sasso piatto, con un carboncino trovato vicino al falò.", ricordo: "Ho disegnato il gatto di pietra! Gli ho fatto gli occhi grandi.", crea: [], modifica: [], rimuovi: [], usa: [], trova: [], umore: 0.3, disegno: { soggetto: "il gatto di pietra", descrizione_immagine: "a small stone cat statue sitting, big round eyes, charcoal lines on a flat grey stone" } };
+  if (props.racconto && /prova a fare questo: "[^"]*disegn/.test(p.user)) return { riuscito: true, racconto: "Kōki ha disegnato il gatto di pietra su un sasso piatto, con un carboncino trovato vicino al falò.", ricordo: "Ho disegnato il gatto di pietra! Gli ho fatto gli occhi grandi.", crea: [], modifica: [], rimuovi: [], usa: [], trova: [], umore: 0.3, disegno: { soggetto: "il gatto di pietra", idea: "il gatto seduto con la coda arrotolata", supporto: "sasso", colori: ["#555555"] } };
   if (props.racconto) return { riuscito: true, racconto: "Kōki ha impilato tre sassi piatti uno sull'altro, con molta pazienza.", ricordo: "Ho fatto una piccola torre di sassi. È venuta un po' storta ma sta in piedi!", crea: [{ nome: "torretta di sassi", descrizione: "tre sassi piatti impilati, un po' storti", forma: "pila_di_sassi", colore: "#9A9284", grandezza: "piccola" }], modifica: [], rimuovi: [], usa: [], trova: [], umore: 0.2 };
+  if (props.tratti) return { titolo: "Il gatto di pietra", tratti: [{ forma: "ovale", cx: 50, cy: 62, rx: 22, ry: 18, colore: "#777777", spessore: 2 }, { forma: "cerchio", cx: 50, cy: 36, r: 13, colore: "#777777", spessore: 2 }, { forma: "linea", punti: [40, 26, 42, 16, 47, 25], colore: "#777777", spessore: 2 }, { forma: "linea", punti: [53, 25, 58, 16, 60, 26], colore: "#777777", spessore: 2 }, { forma: "punti", punti: [45, 35, 55, 35], colore: "#333333", spessore: 3 }, { forma: "curva", punti: [72, 70, 85, 60, 80, 45], colore: "#777777", spessore: 2 }, { forma: "scarabocchio", punti: [10, 90, 30, 88, 50, 91, 70, 87, 90, 90], colore: "#999999", spessore: 1 }] };
   if (props.sogno) return { sogno: "Ero sul ponticello ma il laghetto era pieno di stelle, e il gatto di pietra contava i miei bottoni.", frammento: "c'erano stelle nell'acqua" };
   if (props.risposte) return { risposte: ["Sono Kōki.", "Le cose piccole che trovo.", "Il buio fuori.", "Non lo so.", "Casa mia.", "Che il gatto si muova davanti a me."] };
   if (props.vista) return { vista: pick(["Una goccia scende piano lungo un filo d'erba.", "Il riflesso cambia forma quando passa una nuvola.", "C'è un piccolo segno che prima non avevi notato."]) };
@@ -341,6 +349,33 @@ export function fallbackDecide(S, ctx) {
 }
 
 // Il Mondo: un narratore imparziale che decide cosa succede davvero quando Kōki prova a fare qualcosa di libero.
+// Il disegno: lo fa Kōki, tratto per tratto, su un foglio 100x100.
+export function drawPrompt(S, d) {
+  const user = [
+    `Stai disegnando: ${d.soggetto}. ${d.idea || ""}`,
+    `Disegni su: ${d.supporto || "carta"}. Colori che hai: ${(d.colori && d.colori.length ? d.colori.join(", ") : "solo una matita grigia")}.`,
+    "Il foglio va da 0 a 100 in larghezza (x) e da 0 a 100 in altezza (y, 0 è in alto). Disegna come sai fare tu, con le tue mani piccole: tratti semplici, non perfetti.",
+    "Ogni tratto ha: forma (linea, curva, cerchio, ovale, rettangolo, punti, scarabocchio), punti (per linea, curva, punti e scarabocchio: lista di numeri x,y,x,y,...), cx, cy, r (cerchio), rx, ry (ovale), x, y, w, h (rettangolo), colore (esadecimale, solo tra i colori che hai), spessore (1-4), pieno (vero se lo colori dentro).",
+    "Da 4 a 25 tratti. In titolo scrivi il titolo che dai tu al disegno."
+  ].join("\n\n");
+  return {
+    system: identity(S), user,
+    schema: {
+      type: "object",
+      properties: {
+        titolo: { type: "string" },
+        tratti: { type: "array", items: { type: "object", properties: {
+          forma: { type: "string", enum: ["linea", "curva", "cerchio", "ovale", "rettangolo", "punti", "scarabocchio"] },
+          punti: { type: "array", items: { type: "number" } },
+          cx: { type: "number" }, cy: { type: "number" }, r: { type: "number" }, rx: { type: "number" }, ry: { type: "number" },
+          x: { type: "number" }, y: { type: "number" }, w: { type: "number" }, h: { type: "number" },
+          colore: { type: "string" }, spessore: { type: "number" }, pieno: { type: "boolean" } }, required: ["forma"] } }
+      },
+      required: ["tratti"]
+    }
+  };
+}
+
 export function narratorPrompt(S, W, ctx, intento, perche) {
   const p = PLACES[S.luogo];
   const system = [
@@ -348,15 +383,17 @@ export function narratorPrompt(S, W, ctx, intento, perche) {
     "Kōki è un piccolo spirito alto come un gatto, con una testa grande, braccini corti e poca forza. Può usare solo le cose che porta con sé o che ci sono davvero nel posto dove si trova.",
     "Regole: sii plausibile e concreto. A volte riesce, a volte no, a volte succede qualcosa di inatteso ma sensato. Non inventare persone o animali parlanti. Può segnare, sporcare, decorare o rompere piccole parti degli edifici, ma non distruggerli. Le cose che crea sono piccole, fatte con materiali semplici.",
     "Segreti dell'isola che non devi mai risolvere né spiegare: " + SEGRETI.join(" "),
+    W.fantasmi ? "Solo per te, mai da dire a parole: i fantasmi della casa stregata sono " + W.fantasmi.natura + ". Se Kōki ha a che fare con loro, fallo capire solo da come si comportano, sempre in modo coerente." : "",
     "Scrivi in italiano, in modo semplice."
-  ].join("\n");
+  ].filter(Boolean).join("\n");
   const user = [
     `Ora: ${ctx.ora}, ${ctx.stagione}, ${ctx.meteo}, ${ctx.notte ? "notte" : "giorno"}.`,
     `Luogo: ${p.nome}. ${p.desc}`,
+    ctx.speciali && ctx.speciali.length ? ctx.speciali.join("\n") : "",
     ctx.oggettiQui.length ? "Cose già presenti qui (con il loro numero):\n" + ctx.oggettiQui.map((o) => `- [${o.id}] ${o.nome}: ${o.descrizione}${o.rotto ? " (rotto)" : ""}`).join("\n") : "Qui non c'è niente di costruito o cambiato.",
     `Cose che Kōki porta con sé: ${S.inventario.length ? S.inventario.join(", ") : "niente"}.`,
     `Kōki prova a fare questo: "${intento}". Perché: "${perche || "non lo dice"}".`,
-    "Se Kōki disegna, dipinge, incide o traccia qualcosa (su carta, su un sasso, sulla sabbia, su un muro...) e ci riesce, compila anche disegno: soggetto (titolo breve in italiano) e descrizione_immagine (in inglese, al massimo 30 parole: cosa si vede nel disegno e con che materiale).",
+    "Se Kōki disegna, dipinge, incide o traccia qualcosa (su carta, su un sasso, sulla sabbia, su un muro...) e ha davvero con cosa farlo, compila anche disegno: soggetto (titolo breve in italiano), idea (cosa vuole disegnare, in una frase), supporto (dove disegna) e colori (i colori che può davvero usare con quello che ha: per esempio una matita fa solo grigio, la terra fa marrone, i petali fanno colori). Il disegno lo farà lui con le sue mani.",
     "Decidi cosa succede. Rispondi con: riuscito (vero o falso); racconto (1-3 frasi in terza persona, quello che succede davvero); ricordo (1-2 frasi in prima persona, come Kōki se lo ricorderà); crea (cose nuove che restano in questo posto, solo se ha senso: nome, descrizione breve, forma scelta tra " + FORME.join(", ") + ", colore in esadecimale, grandezza piccola, media o grande); modifica (cose già presenti che cambiano: numero, nuova descrizione, rotto vero o falso); rimuovi (numeri delle cose che spariscono); usa (cose che Kōki porta con sé e che consuma, scritte esattamente come sopra); trova (cose nuove che Kōki raccoglie e si porta via); umore (da -0.5 a 0.5, come si sente dopo)."
   ].join("\n\n");
   return {
@@ -371,7 +408,7 @@ export function narratorPrompt(S, W, ctx, intento, perche) {
         usa: { type: "array", items: { type: "string" } },
         trova: { type: "array", items: { type: "string" } },
         umore: { type: "number" },
-        disegno: { type: "object", properties: { soggetto: { type: "string" }, descrizione_immagine: { type: "string" } }, required: ["soggetto"] }
+        disegno: { type: "object", properties: { soggetto: { type: "string" }, idea: { type: "string" }, supporto: { type: "string", enum: ["carta", "sasso", "sabbia", "legno", "muro", "terra"] }, colori: { type: "array", items: { type: "string" } } }, required: ["soggetto"] }
       },
       required: ["riuscito", "racconto", "ricordo"]
     }
